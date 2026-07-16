@@ -276,6 +276,9 @@ export class ScoringEngine {
     };
 
     // Calculate Overall Venture Score
+    // Note: investorReadiness has a 0% weight in the formula because it is calculated
+    // as a composite meta-score (averaging the other 9 dimensions and deducting rule failures).
+    // The overall score relies on the 9 primary independent indicators.
     const overallScore = Math.round(
       problemScore * 0.15 +
         customerScore * 0.15 +
@@ -287,6 +290,7 @@ export class ScoringEngine {
         diffScore * 0.08 +
         scaleScore * 0.08
     );
+
 
     return {
       problem,

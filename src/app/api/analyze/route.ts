@@ -14,8 +14,33 @@ import { cookies } from "next/headers";
 import { QuestionnaireAnswers, UnifiedVentureReport } from "@/types";
 import { nanoid } from "nanoid";
 
+// Simple in-memory sliding-window rate limiting map
+const ipCache = new Map<string, number[]>();
+const LIMIT_WINDOW = 60000; // 1 minute
+const MAX_REQUESTS = 5; // Max 5 analysis requests per minute per IP
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const timestamps = ipCache.get(ip) || [];
+  const activeTimestamps = timestamps.filter(t => now - t < LIMIT_WINDOW);
+  if (activeTimestamps.length >= MAX_REQUESTS) {
+    return true;
+  }
+  activeTimestamps.push(now);
+  ipCache.set(ip, activeTimestamps);
+  return false;
+}
+
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "127.0.0.1";
+    if (checkRateLimit(ip)) {
+      return NextResponse.json(
+        { error: "Too many analysis requests. Please wait 60 seconds." },
+        { status: 429 }
+      );
+    }
+
     const answers: QuestionnaireAnswers = await req.json();
 
     if (!answers || !answers.idea) {
@@ -70,24 +95,25 @@ export async function POST(req: Request) {
     const recommendationEngine = new RecommendationEngine();
     const recommendations = recommendationEngine.generate(facts, ruleOutcomes, scores);
 
-    // 10. AI Strategic Analysis & Explanations (NIM / Gemini)
+    // 10 & 11. Run AI Strategic Analysis & AI Cross-Verification Layer concurrently
     const explainer = new AIExplainer(aiProvider);
-    const aiAnalysis = await explainer.generateAnalysis(
-      facts,
-      ruleOutcomes,
-      scores,
-      answers,
-      researchResult.evidenceText
-    );
+    const [aiAnalysis, crossVerification] = await Promise.all([
+      explainer.generateAnalysis(
+        facts,
+        ruleOutcomes,
+        scores,
+        answers,
+        researchResult.evidenceText
+      ),
+      explainer.crossVerify(
+        facts,
+        ruleOutcomes,
+        scores,
+        answers,
+        researchResult.evidenceText
+      )
+    ]);
 
-    // 11. AI Cross-Verification Layer (NIM / Gemini)
-    const crossVerification = await explainer.crossVerify(
-      facts,
-      ruleOutcomes,
-      scores,
-      answers,
-      researchResult.evidenceText
-    );
 
     // Compile the final Unified Venture Intelligence Report
     const guestProjectId = `guest_${nanoid(10)}`;

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useVentureStore } from "@/stores/ventureStore";
 import { UnifiedVentureReport } from "@/types";
+import { toast } from "sonner";
 
 export default function ReportPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -13,6 +14,13 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"summary" | "analysis" | "roadmap" | "copy">("summary");
+
+  const handleComingSoon = (feature: string) => {
+    toast.info(`${feature} is coming soon`, {
+      description: "This feature is on our Q3 2026 roadmap.",
+      duration: 3000,
+    });
+  };
 
   useEffect(() => {
     const getReport = async () => {
@@ -70,7 +78,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   // Radar chart calculations: Map 5 dimensions to SVG points
   // Dimensions: Problem (0 deg), Customer (72 deg), Market (144 deg), Business Model (216 deg), Risk (288 deg)
   const getRadarPoints = () => {
-    const center = 100;
+    const center = 120;
     const rScale = 0.8; // Scale max radius (80px)
     const angles = [0, 72, 144, 216, 288];
     const values = [
@@ -129,28 +137,37 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
               <span className="material-symbols-outlined text-lg">analytics</span>
               <span>Reports</span>
             </button>
-            <button className="flex items-center gap-3 w-full px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm text-left">
+            <button
+              onClick={() => handleComingSoon("Templates")}
+              className="flex items-center gap-3 w-full px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm text-left"
+            >
               <span className="material-symbols-outlined text-lg">dashboard_customize</span>
               <span>Templates</span>
             </button>
-            <button className="flex items-center gap-3 w-full px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm text-left">
+            <button
+              onClick={() => handleComingSoon("Settings")}
+              className="flex items-center gap-3 w-full px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm text-left"
+            >
               <span className="material-symbols-outlined text-lg">settings</span>
               <span>Settings</span>
             </button>
           </div>
         </div>
         <div className="pt-4 border-t border-outline-variant/20 space-y-1">
-          <button className="flex items-center gap-3 w-full px-3 py-2 text-on-surface-variant hover:text-on-surface text-xs font-semibold text-left">
+          <button
+            onClick={() => handleComingSoon("Support")}
+            className="flex items-center gap-3 w-full px-3 py-2 text-on-surface-variant hover:text-on-surface text-xs font-semibold text-left"
+          >
             <span className="material-symbols-outlined text-base">help</span>
             <span>Support</span>
           </button>
           <div className="flex items-center gap-3 px-3 py-4 mt-2">
             <div className="w-8 h-8 rounded-full border border-outline-variant/50 bg-secondary-container flex items-center justify-center font-bold text-secondary text-xs">
-              MC
+              VL
             </div>
             <div>
-              <p className="font-semibold text-xs text-on-surface">Marcus Chen</p>
-              <p className="text-[10px] text-on-surface-variant">Premium Partner</p>
+              <p className="font-semibold text-xs text-on-surface">VentureLens Guest</p>
+              <p className="text-[10px] text-on-surface-variant">Beta Access</p>
             </div>
           </div>
         </div>
@@ -248,11 +265,13 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 <h3 className="font-mono text-xs text-on-surface-variant uppercase tracking-widest mb-4 font-semibold">
                   Venture Health Radar
                 </h3>
-                <div className="aspect-square w-full max-w-[200px] mx-auto relative flex items-center justify-center">
-                  <svg className="w-full h-full opacity-40" viewBox="0 0 200 200">
-                    <circle cx="100" cy="100" fill="none" r="80" stroke="#cbd5e1" strokeDasharray="4" strokeWidth="1"></circle>
-                    <circle cx="100" cy="100" fill="none" r="60" stroke="#cbd5e1" strokeDasharray="4" strokeWidth="1"></circle>
-                    <circle cx="100" cy="100" fill="none" r="40" stroke="#cbd5e1" strokeDasharray="4" strokeWidth="1"></circle>
+                <div className="w-full max-w-[200px] mx-auto aspect-square flex items-center justify-center">
+                  <svg className="w-full h-full" viewBox="0 0 240 240">
+                    {/* Background Grids */}
+                    <circle cx="120" cy="120" fill="none" r="80" stroke="#cbd5e1" strokeDasharray="4" strokeWidth="1" className="opacity-40"></circle>
+                    <circle cx="120" cy="120" fill="none" r="60" stroke="#cbd5e1" strokeDasharray="4" strokeWidth="1" className="opacity-40"></circle>
+                    <circle cx="120" cy="120" fill="none" r="40" stroke="#cbd5e1" strokeDasharray="4" strokeWidth="1" className="opacity-40"></circle>
+                    
                     {/* Axis Lines */}
                     {[0, 72, 144, 216, 288].map((angle) => {
                       const rad = (angle - 90) * (Math.PI / 180);
@@ -261,43 +280,52 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                           key={angle}
                           stroke="#cbd5e1"
                           strokeWidth="1"
-                          x1="100"
-                          y1="100"
-                          x2={100 + 80 * Math.cos(rad)}
-                          y2={100 + 80 * Math.sin(rad)}
+                          className="opacity-40"
+                          x1="120"
+                          y1="120"
+                          x2={120 + 80 * Math.cos(rad)}
+                          y2={120 + 80 * Math.sin(rad)}
                         />
                       );
                     })}
-                  </svg>
-                  {/* Dynamic Radar Polygon */}
-                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 200">
+
+                    {/* Dynamic Radar Polygon */}
                     <polygon
                       fill="rgba(0, 88, 190, 0.15)"
                       stroke="#0058be"
                       strokeWidth="2"
                       points={getRadarPoints()}
                     />
-                  </svg>
-                  {/* Labels */}
-                  <span className="absolute -top-3 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">
-                    Problem
-                  </span>
-                  <span className="absolute -right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">
-                    Customer
-                  </span>
-                  <span className="absolute bottom-[-10px] right-2 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">
-                    Market
-                  </span>
-                  <span className="absolute bottom-[-10px] left-2 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">
-                    Model
-                  </span>
-                  <span className="absolute -left-3 top-1/2 -translate-y-1/2 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">
-                    Team Risk
-                  </span>
-                </div>
-              </div>
 
-              {/* AI Executive Summary Card */}
+                    {/* SVG Labels: problem (angle 0), customer (72), market (144), model (216), team risk (288) */}
+                    {(() => {
+                      const labels = ["Problem", "Customer", "Market", "Model", "Team Risk"];
+                      return [0, 72, 144, 216, 288].map((angle, index) => {
+                        const rad = (angle - 90) * (Math.PI / 180);
+                        const r = 98; // radius for placing labels outside grid
+                        const lx = 120 + r * Math.cos(rad);
+                        const ly = 120 + r * Math.sin(rad) + 4; // +4 for visual center adjustment
+                        
+                        let anchor: "middle" | "start" | "end" = "middle";
+                        if (index === 1 || index === 2) anchor = "start";
+                        if (index === 3 || index === 4) anchor = "end";
+
+                        return (
+                          <text
+                            key={angle}
+                            x={lx}
+                            y={ly}
+                            textAnchor={anchor}
+                            className="fill-on-surface-variant text-[10px] font-mono font-bold uppercase tracking-wider"
+                          >
+                            {labels[index]}
+                          </text>
+                        );
+                      });
+                    })()}
+                  </svg>
+                </div>
+              </div>              {/* AI Executive Summary Card */}
               <div className="bg-white p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col justify-between">
                 <h3 className="font-mono text-xs text-on-surface-variant uppercase tracking-widest mb-4 flex items-center gap-1.5 font-semibold">
                   <span className="material-symbols-outlined text-secondary text-base">auto_awesome</span>
