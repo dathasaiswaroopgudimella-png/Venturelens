@@ -1,8 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function LandingPage() {
+  const handleComingSoon = (label: string) => {
+    toast.info(`${label} — Coming Soon`, {
+      description: "This section is on our roadmap. Beta access is fully free.",
+      duration: 3000,
+    });
+  };
+
   return (
     <div className="bg-surface min-h-screen text-on-surface font-sans selection:bg-secondary-container selection:text-on-secondary-container">
       {/* TopNavBar */}
@@ -12,16 +20,16 @@ export default function LandingPage() {
             VentureLens AI
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-            <a className="text-secondary border-b-2 border-secondary pb-1 transition-all duration-200" href="#">
+            <a className="text-secondary border-b-2 border-secondary pb-1 transition-all duration-200" href="#deterministic-engine">
               Platform
             </a>
-            <a className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200" href="#">
-              Solutions
+            <a className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200" href="#feature-grid">
+              Features
             </a>
-            <a className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200" href="#">
+            <button onClick={() => handleComingSoon("Resources")} className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200">
               Resources
-            </a>
-            <a className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200" href="#">
+            </button>
+            <a className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200" href="#beta-cta">
               Pricing
             </a>
           </nav>
@@ -291,114 +299,53 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Pricing Tiers */}
-        <section className="py-24 bg-white">
+        {/* Beta Access Section — replaces fake $499 pricing */}
+        <section id="beta-cta" className="py-24 bg-white">
           <div className="max-w-[1440px] mx-auto px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold mb-4 tracking-tight">Scale Your Analysis</h2>
-              <p className="text-on-surface-variant max-w-xl mx-auto">
-                From individual founders testing their next thesis to global venture funds auditing portfolios.
+            <div className="max-w-3xl mx-auto text-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-accent/10 border border-emerald-accent/20 rounded-full mb-8">
+                <span className="w-2 h-2 rounded-full bg-emerald-accent animate-pulse"></span>
+                <span className="font-mono text-xs text-emerald-accent font-semibold uppercase tracking-wider">
+                  Free During Beta
+                </span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 tracking-tight">
+                Free, Unlimited Access — During Beta
+              </h2>
+              <p className="text-on-surface-variant text-lg mb-12 leading-relaxed">
+                VentureLens AI is free during our Beta launch. Every analysis — including the full 9-stage deterministic pipeline, AI cross-verification, and venture intelligence report — runs at no cost.
               </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Starter */}
-              <div className="p-10 rounded-2xl border border-outline-variant/30 bg-surface flex flex-col">
-                <h3 className="text-xl font-bold mb-2">Founder</h3>
-                <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-3xl font-bold">$0</span>
-                  <span className="text-on-surface-variant text-sm font-medium">/per analysis</span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 text-left">
+                <div className="p-6 bg-surface rounded-xl border border-outline-variant/30">
+                  <div className="w-10 h-10 bg-emerald-accent/10 rounded-lg flex items-center justify-center mb-4">
+                    <span className="material-symbols-outlined text-emerald-accent">rule</span>
+                  </div>
+                  <h3 className="font-bold mb-2">Full Rule Engine</h3>
+                  <p className="text-sm text-on-surface-variant">All 16 deterministic logic rules run on every submission — no feature gating.</p>
                 </div>
-                <p className="text-sm text-on-surface-variant mb-8 leading-relaxed">
-                  Perfect for testing your first concept.
-                </p>
-                <ul className="space-y-4 mb-10 flex-1 text-sm text-on-surface-variant">
-                  <li className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-emerald-accent text-lg">check_circle</span>
-                    Single Thesis Validation
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-emerald-accent text-lg">check_circle</span>
-                    Basic Competitor Mappings
-                  </li>
-                  <li className="flex items-center gap-3 opacity-40">
-                    <span className="material-symbols-outlined text-lg">cancel</span>
-                    Custom Rule Customizations
-                  </li>
-                </ul>
-                <Link
-                  href="/wizard"
-                  className="w-full py-4 border border-primary text-primary font-bold rounded-lg hover:bg-primary hover:text-on-primary transition-all text-center"
-                >
-                  Start Free
-                </Link>
+                <div className="p-6 bg-surface rounded-xl border border-outline-variant/30">
+                  <div className="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center mb-4">
+                    <span className="material-symbols-outlined text-secondary">analytics</span>
+                  </div>
+                  <h3 className="font-bold mb-2">10-Dimension Scoring</h3>
+                  <p className="text-sm text-on-surface-variant">Mathematical venture scoring across Problem, Market, Competition, Business Model, and more.</p>
+                </div>
+                <div className="p-6 bg-surface rounded-xl border border-outline-variant/30">
+                  <div className="w-10 h-10 bg-emerald-accent/10 rounded-lg flex items-center justify-center mb-4">
+                    <span className="material-symbols-outlined text-emerald-accent">smart_toy</span>
+                  </div>
+                  <h3 className="font-bold mb-2">AI Cross-Verification</h3>
+                  <p className="text-sm text-on-surface-variant">Independent NVIDIA NIM strategic review with agreement scoring on every report.</p>
+                </div>
               </div>
-
-              {/* Pro */}
-              <div className="p-10 rounded-2xl border-2 border-secondary bg-white macro-shadow relative flex flex-col transform md:-translate-y-4">
-                <div className="absolute top-0 right-10 -translate-y-1/2 bg-secondary text-on-secondary px-4 py-1 rounded-full text-[10px] font-mono uppercase tracking-widest font-semibold">
-                  Most Popular
-                </div>
-                <h3 className="text-xl font-bold mb-2 text-secondary">Venture Partner</h3>
-                <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-3xl font-bold">$499</span>
-                  <span className="text-on-surface-variant text-sm font-medium">/month</span>
-                </div>
-                <p className="text-sm text-on-surface-variant mb-8 leading-relaxed">
-                  For serious founders and angel investors.
-                </p>
-                <ul className="space-y-4 mb-10 flex-1 text-sm text-on-surface-variant">
-                  <li className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-emerald-accent text-lg">check_circle</span>
-                    Unlimited Thesis Validations
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-emerald-accent text-lg">check_circle</span>
-                    Proprietary Market Intelligence
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-emerald-accent text-lg">check_circle</span>
-                    Investment Grade PDF Exports
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-emerald-accent text-lg">check_circle</span>
-                    Priority Validation Pipeline
-                  </li>
-                </ul>
-                <Link
-                  href="/wizard"
-                  className="w-full py-4 bg-secondary text-on-secondary font-bold rounded-lg hover:opacity-90 transition-all text-center"
-                >
-                  Get Pro Access
-                </Link>
-              </div>
-
-              {/* Enterprise */}
-              <div className="p-10 rounded-2xl border border-outline-variant/30 bg-surface flex flex-col">
-                <h3 className="text-xl font-bold mb-2">Institution</h3>
-                <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-3xl font-bold">Custom</span>
-                </div>
-                <p className="text-sm text-on-surface-variant mb-8 leading-relaxed">
-                  For VC firms and corporate innovation boards.
-                </p>
-                <ul className="space-y-4 mb-10 flex-1 text-sm text-on-surface-variant">
-                  <li className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-emerald-accent text-lg">check_circle</span>
-                    Custom Rule Heuristics
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-emerald-accent text-lg">check_circle</span>
-                    API & CRM Integrations
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-emerald-accent text-lg">check_circle</span>
-                    White-label Reports
-                  </li>
-                </ul>
-                <button className="w-full py-4 border border-outline-variant text-on-surface font-bold rounded-lg hover:bg-surface-container-high transition-all">
-                  Contact Sales
-                </button>
-              </div>
+              <Link
+                href="/wizard"
+                className="inline-flex items-center gap-2 bg-primary text-on-primary px-10 py-4 rounded-xl text-base font-bold hover:opacity-90 transition-all active:scale-95 shadow-sm"
+              >
+                <span className="material-symbols-outlined">rocket_launch</span>
+                Start Your Free Analysis
+              </Link>
+              <p className="text-xs text-on-surface-variant mt-4 font-mono">No account required · No credit card · Results in ~20 seconds</p>
             </div>
           </div>
         </section>
@@ -432,10 +379,10 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 mb-8 md:mb-0 text-xs text-on-surface-variant font-medium">
-            <a className="hover:text-secondary transition-colors" href="#">Privacy Policy</a>
-            <a className="hover:text-secondary transition-colors" href="#">Terms of Service</a>
-            <a className="hover:text-secondary transition-colors" href="#">Security</a>
-            <a className="hover:text-secondary transition-colors" href="#">Contact</a>
+            <button onClick={() => handleComingSoon("Privacy Policy")} className="hover:text-secondary transition-colors">Privacy Policy</button>
+            <button onClick={() => handleComingSoon("Terms of Service")} className="hover:text-secondary transition-colors">Terms of Service</button>
+            <button onClick={() => handleComingSoon("Security docs")} className="hover:text-secondary transition-colors">Security</button>
+            <button onClick={() => handleComingSoon("Contact")} className="hover:text-secondary transition-colors">Contact</button>
           </div>
           <div className="text-on-surface-variant text-xs font-semibold">
             © 2026 VentureLens AI. All rights reserved.

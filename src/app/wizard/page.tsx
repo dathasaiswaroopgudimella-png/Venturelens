@@ -1,42 +1,43 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useVentureStore } from "@/stores/ventureStore";
-import { QuestionnaireAnswers } from "@/types";
+import { toast } from "sonner";
 
 export default function WizardPage() {
   const router = useRouter();
-  const { answers, updateAnswer, setAnswers, startAnalysis, loadReport } = useVentureStore();
+  const { answers, updateAnswer, setAnswers, startAnalysis } = useVentureStore();
   const [step, setStep] = useState(1); // 1: Idea, 2: Details, 3: Review, 4: Analyzing
   const [loadingStage, setLoadingStage] = useState(0);
+  const [awaitingServer, setAwaitingServer] = useState(false);
   const [loadingText, setLoadingText] = useState("Initializing Decision Pipeline...");
+  const analysisTriggered = useRef(false);
 
-  // Mock real-time helper values based on idea input length
+  // Idea extraction signals — generic, idea-content-aware
   const ideaWords = answers.idea.trim() ? answers.idea.trim().split(/\s+/).length : 0;
-  const [extractedProblem, setExtractedProblem] = useState("Start typing to extract the problem...");
-  const [extractedCustomer, setExtractedCustomer] = useState("Waiting for audience details...");
-  const [extractedClarity, setExtractedClarity] = useState(24);
+  const firstWords = answers.idea.trim().split(/\s+/).slice(0, 4).join(" ");
 
-  useEffect(() => {
-    if (ideaWords > 5) {
-      setExtractedProblem("High supply chain costs and food waste in local distribution.");
-      setExtractedClarity(48);
-    } else {
-      setExtractedProblem("Start typing to extract the problem...");
-      setExtractedClarity(24);
-    }
+  const extractedProblem =
+    ideaWords > 5
+      ? `Core problem detected in: "${firstWords}..."`
+      : "Start typing your idea to extract the problem statement...";
 
-    if (ideaWords > 15) {
-      setExtractedCustomer("Small-scale organic farmers & Metropolitan restaurants.");
-      setExtractedClarity(82);
-    } else {
-      setExtractedCustomer("Waiting for audience details...");
-    }
-  }, [ideaWords]);
+  const extractedCustomer =
+    answers.targetCustomer.trim().length > 3
+      ? `Target audience: ${answers.targetCustomer.slice(0, 60)}${answers.targetCustomer.length > 60 ? "..." : ""}`
+      : ideaWords > 15
+      ? "Customer segment being parsed from idea description..."
+      : "Waiting for target customer details...";
 
-  // Loading animation stages
+  const extractedClarity =
+    ideaWords > 25 ? 88
+    : ideaWords > 15 ? 68
+    : ideaWords > 5 ? 42
+    : 18;
+
+  // Loading animation stages — defined outside effect to avoid stale closure
   const pipelineStages = [
     "Structured Fact Extraction Engine running...",
     "Venture Knowledge Graph Builder mapping entities...",
@@ -58,36 +59,46 @@ export default function WizardPage() {
           setLoadingText(pipelineStages[loadingStage]);
           setLoadingStage((prev) => prev + 1);
         }, 1200);
-      } else {
-        // Trigger actual analysis API
+      } else if (!analysisTriggered.current) {
+        // All animation stages complete — trigger actual API call
+        analysisTriggered.current = true;
+        setAwaitingServer(true);
+        setLoadingText("Awaiting server response — this may take up to 20 seconds...");
+
         const triggerAnalysis = async () => {
           try {
             console.log("[Wizard] Triggering VentureLens AI analysis...");
             const report = await startAnalysis(answers);
-            // Save to localStorage so that the report page can retrieve it if not logged in
             localStorage.setItem("latest_venturelens_report", JSON.stringify(report));
-            // Redirect to report
             router.push(`/report/latest`);
-          } catch (err) {
+          } catch (err: any) {
             console.error("Analysis failed:", err);
-            alert("Analysis failed. Please check your API keys or try again.");
-            setStep(3); // Fallback to review stage
+            toast.error("Analysis failed", {
+              description: err?.message || "Please check your API keys and try again.",
+              duration: 6000,
+            });
+            setStep(3);
             setLoadingStage(0);
+            setAwaitingServer(false);
+            analysisTriggered.current = false;
           }
         };
         triggerAnalysis();
       }
     }
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, loadingStage]);
 
   const handleNextStep = () => {
     if (step === 1) {
       if (!answers.idea.trim()) {
-        alert("Please describe your startup idea first.");
+        toast.warning("Idea required", {
+          description: "Please describe your startup idea before continuing.",
+          duration: 3000,
+        });
         return;
       }
-      // Set defaults for details based on idea text if empty
       if (!answers.problemSolved) updateAnswer("problemSolved", answers.idea);
       setStep(2);
     } else if (step === 2) {

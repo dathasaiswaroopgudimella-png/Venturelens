@@ -3,29 +3,37 @@
 :root {
   --background: #F8FAFC;
   --foreground: #0F172A;
-  
+
   --surface: #F8FAFC;
+  --surface-container-low: #F1F5F9;
+  --surface-container: #E2E8F0;
+  --surface-container-high: #CBD5E1;
   --on-surface: #0F172A;
-  
+
   --primary: #0F172A;
   --on-primary: #FFFFFF;
-  
+
   --secondary: #0058be;
   --on-secondary: #FFFFFF;
   --secondary-container: #E5EEFF;
   --on-secondary-container: #0058be;
-  
+
   --emerald-accent: #10B981;
-  
+  --error: #EF4444;
+  --on-error: #FFFFFF;
+
   --outline-variant: #E2E8F0;
   --on-surface-variant: #64748B;
-  
+
   --font-inter: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
 }
 
 @theme {
   --color-surface: var(--surface);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
   --color-on-surface: var(--on-surface);
   --color-primary: var(--primary);
   --color-on-primary: var(--on-primary);
@@ -34,9 +42,11 @@
   --color-secondary-container: var(--secondary-container);
   --color-on-secondary-container: var(--on-secondary-container);
   --color-emerald-accent: var(--emerald-accent);
+  --color-error: var(--error);
+  --color-on-error: var(--on-error);
   --color-outline-variant: var(--outline-variant);
   --color-on-surface-variant: var(--on-surface-variant);
-  
+
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), monospace;
 }

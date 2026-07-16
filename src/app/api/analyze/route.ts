@@ -12,6 +12,7 @@ import { AIExplainer } from "@/lib/engines/ai-explainer";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import { QuestionnaireAnswers, UnifiedVentureReport } from "@/types";
+import { nanoid } from "nanoid";
 
 export async function POST(req: Request) {
   try {
@@ -89,8 +90,9 @@ export async function POST(req: Request) {
     );
 
     // Compile the final Unified Venture Intelligence Report
+    const guestProjectId = `guest_${nanoid(10)}`;
     const report: UnifiedVentureReport = {
-      projectId: "temp_project",
+      projectId: guestProjectId,
       answers,
       facts,
       graph,
@@ -162,11 +164,16 @@ export async function POST(req: Request) {
     }
 
     console.log("[API/Analyze] VentureLens Pipeline execution completed successfully.");
-    return NextResponse.json(report);
+    return NextResponse.json(report, {
+      headers: {
+        // Prevent response from being cached — each analysis is unique
+        "Cache-Control": "no-store",
+      },
+    });
   } catch (error: any) {
     console.error("[API/Analyze] Pipeline Execution Failure:", error);
     return NextResponse.json(
-      { error: "Internal Server Error in analysis pipeline: " + (error?.message || error) },
+      { error: "Analysis pipeline failed. Please try again." },
       { status: 500 }
     );
   }
