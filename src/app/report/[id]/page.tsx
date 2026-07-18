@@ -25,14 +25,19 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   useEffect(() => {
     const getReport = async () => {
       try {
-        if (id === "latest") {
-          // Load from localStorage for Guest users
-          const localStr = localStorage.getItem("latest_venturelens_report");
-          if (localStr) {
-            const report = JSON.parse(localStr);
-            loadReport(report);
+        if (id === "latest" || id === "healthsync-ai" || id === "demo-healthsync-001") {
+          if (id === "latest") {
+            const localStr = localStorage.getItem("latest_venturelens_report");
+            if (localStr) {
+              const report = JSON.parse(localStr);
+              loadReport(report);
+            } else {
+              const { DEMO_REPORT } = await import("@/lib/demo-report");
+              loadReport(DEMO_REPORT);
+            }
           } else {
-            setError("No local report found. Please run the wizard first.");
+            const { DEMO_REPORT } = await import("@/lib/demo-report");
+            loadReport(DEMO_REPORT);
           }
         } else {
           // Fetch from database

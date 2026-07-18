@@ -8,6 +8,13 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    
+    // Intercept demo/latest requests to return the static pre-computed demo report
+    if (id === "healthsync-ai" || id === "demo-healthsync-001") {
+      const { DEMO_REPORT } = await import("@/lib/demo-report");
+      return NextResponse.json(DEMO_REPORT);
+    }
+
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
@@ -28,7 +35,8 @@ export async function GET(
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
+      console.error("[API/Reports] Supabase query failed:", error);
+      return NextResponse.json({ error: "Report not found or database table is missing." }, { status: 404 });
     }
 
     // Load matching questionnaire answers
@@ -57,6 +65,6 @@ export async function GET(
     return NextResponse.json(unifiedReport);
   } catch (error: any) {
     console.error("[API/Reports] Failed to fetch report:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error loading report." }, { status: 500 });
   }
 }

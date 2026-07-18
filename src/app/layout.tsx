@@ -19,6 +19,27 @@ export const metadata: Metadata = {
   title: "VentureLens AI | Decision Intelligence for Startups",
   description:
     "Evaluate your startup idea through deterministic scoring, rules, evidence, consistency validation, and expert AI strategic reviews.",
+  metadataBase: new URL("https://venturelens-two.vercel.app"),
+  openGraph: {
+    title: "VentureLens AI — Decision Intelligence Platform",
+    description:
+      "Move beyond chatbot guesses. Run your startup through a deterministic 9-stage validation pipeline. Free during beta.",
+    url: "https://venturelens-two.vercel.app",
+    siteName: "VentureLens AI",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "VentureLens AI — Decision Intelligence for Founders",
+    description:
+      "Deterministic startup scoring, live competitor analysis, and AI cross-verification. Free for founders.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
 };
 
 export default function RootLayout({

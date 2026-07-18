@@ -13,6 +13,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [activityExpanded, setActivityExpanded] = useState(false);
   const [projectsRef, setProjectsRef] = useState<HTMLElement | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -156,8 +157,17 @@ export default function DashboardPage() {
       {/* Main Content Canvas */}
       <main className="flex-1 min-w-0 max-w-[1440px] mx-auto overflow-y-auto">
         {/* Header */}
-        <header className="glass-header sticky top-0 z-40 px-8 h-20 flex items-center justify-between border-b border-outline-variant/30">
-          <h2 className="text-2xl font-bold text-on-surface tracking-tight">Venture Portfolio</h2>
+        <header className="glass-header sticky top-0 z-40 px-6 md:px-8 h-20 flex items-center justify-between border-b border-outline-variant/30">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="block md:hidden text-on-surface-variant hover:text-on-surface p-1 rounded-md transition-colors"
+              aria-label="Open navigation menu"
+            >
+              <span className="material-symbols-outlined text-2xl">menu</span>
+            </button>
+            <h2 className="text-xl md:text-2xl font-bold text-on-surface tracking-tight">Venture Portfolio</h2>
+          </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-container-low rounded-full border border-outline-variant/30">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -439,14 +449,50 @@ export default function DashboardPage() {
           <footer className="pt-8 border-t border-outline-variant/30 flex flex-col md:flex-row justify-between items-center text-xs text-on-surface-variant gap-4">
             <p>© 2026 VentureLens AI. All rights reserved. Beta Version.</p>
             <div className="flex gap-6 font-semibold">
-              <button onClick={() => handleComingSoon("Privacy Policy")} className="hover:text-secondary transition-colors">Privacy Policy</button>
-              <button onClick={() => handleComingSoon("Terms of Service")} className="hover:text-secondary transition-colors">Terms of Service</button>
-              <button onClick={() => handleComingSoon("Security docs")} className="hover:text-secondary transition-colors">Security</button>
-              <button onClick={() => handleComingSoon("Contact")} className="hover:text-secondary transition-colors">Contact</button>
+              <Link href="/privacy" className="hover:text-secondary transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-secondary transition-colors">Terms of Service</Link>
+              <Link href="/about" className="hover:text-secondary transition-colors">About</Link>
+              <Link href="/contact" className="hover:text-secondary transition-colors">Contact</Link>
             </div>
           </footer>
         </div>
       </main>
+
+      {/* Mobile Navigation Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[100] flex md:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
+          <aside className="relative w-72 h-full bg-surface border-r border-outline-variant/20 p-4 flex flex-col justify-between shadow-xl">
+            <div>
+              <div className="flex items-center justify-between px-2 mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                    <span className="material-symbols-outlined text-white text-lg">lens</span>
+                  </div>
+                  <h1 className="font-bold text-base text-on-surface">VentureLens AI</h1>
+                </div>
+                <button onClick={() => setMobileMenuOpen(false)} className="text-on-surface-variant hover:text-on-surface p-1 rounded-md">
+                  <span className="material-symbols-outlined text-xl">close</span>
+                </button>
+              </div>
+              <nav className="space-y-1">
+                <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 bg-secondary-container text-on-secondary-container font-semibold rounded-lg text-sm">
+                  <span className="material-symbols-outlined text-lg">folder_open</span>
+                  <span>Projects</span>
+                </Link>
+                <Link href="/wizard" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm">
+                  <span className="material-symbols-outlined text-lg">add</span>
+                  <span>New Analysis</span>
+                </Link>
+                <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm">
+                  <span className="material-symbols-outlined text-lg">payments</span>
+                  <span>Pricing</span>
+                </Link>
+              </nav>
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }

@@ -20,18 +20,18 @@ export default function LandingPage() {
             VentureLens AI
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-            <a className="text-secondary border-b-2 border-secondary pb-1 transition-all duration-200" href="#deterministic-engine">
+            <Link className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200" href="/platform">
               Platform
-            </a>
-            <a className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200" href="#feature-grid">
+            </Link>
+            <Link className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200" href="/features">
               Features
-            </a>
-            <button onClick={() => handleComingSoon("Resources")} className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200">
-              Resources
-            </button>
-            <a className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200" href="#beta-cta">
+            </Link>
+            <Link className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200" href="/pricing">
               Pricing
-            </a>
+            </Link>
+            <Link className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200" href="/about">
+              About
+            </Link>
           </nav>
           <div className="flex items-center gap-4">
             <Link href="/dashboard" className="text-primary hover:opacity-80 transition-opacity text-sm font-semibold">
@@ -357,7 +357,7 @@ export default function LandingPage() {
               Ready to Validate Your Next Big Thing?
             </h2>
             <p className="text-base md:text-lg mb-12 max-w-2xl mx-auto opacity-80 leading-relaxed font-normal">
-              Stop guessing. Start calculating. Join 2,000+ founders using deterministic analysis to secure their next round.
+              Free during beta. Run your startup through deterministic validation in under 30 seconds — no credit card required.
             </p>
             <Link
               href="/wizard"
@@ -379,10 +379,10 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 mb-8 md:mb-0 text-xs text-on-surface-variant font-medium">
-            <button onClick={() => handleComingSoon("Privacy Policy")} className="hover:text-secondary transition-colors">Privacy Policy</button>
-            <button onClick={() => handleComingSoon("Terms of Service")} className="hover:text-secondary transition-colors">Terms of Service</button>
-            <button onClick={() => handleComingSoon("Security docs")} className="hover:text-secondary transition-colors">Security</button>
-            <button onClick={() => handleComingSoon("Contact")} className="hover:text-secondary transition-colors">Contact</button>
+            <Link href="/privacy" className="hover:text-secondary transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-secondary transition-colors">Terms of Service</Link>
+            <Link href="/about" className="hover:text-secondary transition-colors">About</Link>
+            <Link href="/contact" className="hover:text-secondary transition-colors">Contact</Link>
           </div>
           <div className="text-on-surface-variant text-xs font-semibold">
             © 2026 VentureLens AI. All rights reserved.
