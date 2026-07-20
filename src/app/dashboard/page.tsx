@@ -132,20 +132,20 @@ export default function DashboardPage() {
               <span className="material-symbols-outlined text-lg">analytics</span>
               <span>Reports</span>
             </button>
-            <button
-              onClick={() => handleComingSoon("Templates")}
-              className="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm"
+            <Link
+              href="/templates"
+              className="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm"
             >
               <span className="material-symbols-outlined text-lg">dashboard_customize</span>
               <span>Templates</span>
-            </button>
-            <button
-              onClick={() => handleComingSoon("Settings")}
-              className="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm"
+            </Link>
+            <Link
+              href="/settings"
+              className="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm"
             >
               <span className="material-symbols-outlined text-lg">settings</span>
               <span>Settings</span>
-            </button>
+            </Link>
           </nav>
         </div>
         <div className="border-t border-outline-variant/20 pt-4 space-y-1">
@@ -552,6 +552,14 @@ export default function DashboardPage() {
                 <Link href="/wizard" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm">
                   <span className="material-symbols-outlined text-lg">add</span>
                   <span>New Analysis</span>
+                </Link>
+                <Link href="/templates" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm">
+                  <span className="material-symbols-outlined text-lg">dashboard_customize</span>
+                  <span>Templates</span>
+                </Link>
+                <Link href="/settings" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm">
+                  <span className="material-symbols-outlined text-lg">settings</span>
+                  <span>Settings</span>
                 </Link>
                 <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm">
                   <span className="material-symbols-outlined text-lg">payments</span>
