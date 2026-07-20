@@ -370,23 +370,53 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-surface border-t border-outline-variant/30 shadow-none">
-        <div className="flex flex-col md:flex-row justify-between items-center px-8 py-12 w-full max-w-[1440px] mx-auto">
-          <div className="flex flex-col items-center md:items-start gap-4 mb-8 md:mb-0">
-            <div className="text-lg font-bold text-on-surface">VentureLens AI</div>
-            <p className="text-on-surface-variant text-xs max-w-xs text-center md:text-left leading-relaxed">
-              The intelligence layer for the startup ecosystem. High-fidelity analysis for critical decisions.
+      <footer className="bg-white border-t border-outline-variant/30 py-16">
+        <div className="max-w-[1440px] mx-auto px-8 grid grid-cols-1 md:grid-cols-6 gap-10">
+          <div className="md:col-span-2 space-y-4">
+            <div className="text-xl font-bold text-on-surface">VentureLens AI</div>
+            <p className="text-on-surface-variant text-xs max-w-xs leading-relaxed">
+              Decision intelligence for serious founders. Stress-test your startup assumptions before building.
             </p>
           </div>
-          <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 mb-8 md:mb-0 text-xs text-on-surface-variant font-medium">
-            <Link href="/privacy" className="hover:text-secondary transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-secondary transition-colors">Terms of Service</Link>
-            <Link href="/about" className="hover:text-secondary transition-colors">About</Link>
-            <Link href="/contact" className="hover:text-secondary transition-colors">Contact</Link>
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface mb-4">Product</h4>
+            <ul className="space-y-2 text-xs font-medium text-on-surface-variant">
+              <li><Link href="/features" className="hover:text-secondary transition-colors">Features</Link></li>
+              <li><Link href="/platform" className="hover:text-secondary transition-colors">Platform</Link></li>
+              <li><Link href="/pricing" className="hover:text-secondary transition-colors">Pricing</Link></li>
+              <li><Link href="/templates" className="hover:text-secondary transition-colors">Templates</Link></li>
+            </ul>
           </div>
-          <div className="text-on-surface-variant text-xs font-semibold">
-            © 2026 VentureLens AI. All rights reserved.
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface mb-4">Company</h4>
+            <ul className="space-y-2 text-xs font-medium text-on-surface-variant">
+              <li><Link href="/about" className="hover:text-secondary transition-colors">About</Link></li>
+              <li><Link href="/contact" className="hover:text-secondary transition-colors">Contact</Link></li>
+              <li><button onClick={() => toast.info("Blog is coming soon")} className="hover:text-secondary transition-colors text-left">Blog</button></li>
+              <li><button onClick={() => toast.info("Careers are coming soon")} className="hover:text-secondary transition-colors text-left">Careers</button></li>
+            </ul>
           </div>
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface mb-4">Legal</h4>
+            <ul className="space-y-2 text-xs font-medium text-on-surface-variant">
+              <li><Link href="/privacy" className="hover:text-secondary transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="hover:text-secondary transition-colors">Terms of Service</Link></li>
+              <li><button onClick={() => toast.info("Cookie preferences")} className="hover:text-secondary transition-colors text-left">Cookies</button></li>
+              <li><button onClick={() => toast.info("Security disclosures")} className="hover:text-secondary transition-colors text-left">Security</button></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface mb-4">Connect</h4>
+            <ul className="space-y-2 text-xs font-medium text-on-surface-variant">
+              <li><a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors">Twitter/X</a></li>
+              <li><a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors">LinkedIn</a></li>
+              <li><a href="https://github.com/dathasaiswaroopgudimella-png/Venturelens" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors">GitHub</a></li>
+              <li><a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors">Discord</a></li>
+            </ul>
+          </div>
+        </div>
+        <div className="max-w-[1440px] mx-auto px-8 mt-12 pt-8 border-t border-outline-variant/10 flex justify-between items-center text-xs text-on-surface-variant">
+          <p>© 2026 VentureLens AI. All rights reserved. Beta Version.</p>
         </div>
       </footer>
     </div>

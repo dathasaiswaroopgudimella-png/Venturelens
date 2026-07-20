@@ -14,6 +14,33 @@ export default function DashboardPage() {
   const [activityExpanded, setActivityExpanded] = useState(false);
   const [projectsRef, setProjectsRef] = useState<HTMLElement | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDeleteProject = async (id: string) => {
+    if (id === "demo-healthsync-001") {
+      toast.warning("Protected Sandbox", {
+        description: "The pre-computed sandbox project cannot be deleted.",
+        duration: 3000,
+      });
+      return;
+    }
+    try {
+      const res = await fetch(`/api/projects?id=${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        toast.success("Project deleted successfully");
+        await fetchProjects();
+      } else {
+        toast.error("Failed to delete project");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error deleting project");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -273,69 +300,108 @@ export default function DashboardPage() {
               </div>
 
               {loading ? (
-                /* Skeleton loading state */
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {[1, 2].map((i) => (
-                    <div key={i} className="bg-white p-6 rounded-xl border border-outline-variant/30 animate-pulse">
-                      <div className="w-12 h-12 bg-surface-container rounded-lg mb-4" />
-                      <div className="h-4 bg-surface-container rounded w-3/4 mb-2" />
-                      <div className="h-3 bg-surface-container rounded w-full mb-1" />
-                      <div className="h-3 bg-surface-container rounded w-2/3" />
-                    </div>
-                  ))}
+                /* Table Skeleton loading state */
+                <div className="bg-white rounded-xl border border-outline-variant/30 overflow-hidden shadow-sm animate-pulse">
+                  <div className="h-12 bg-surface-container border-b border-outline-variant/20" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-6 bg-surface-container rounded w-3/4" />
+                    <div className="h-6 bg-surface-container rounded w-1/2" />
+                  </div>
+                </div>
+              ) : displayedProjects.length === 0 ? (
+                /* Empty state */
+                <div className="bg-white rounded-xl border border-outline-variant/30 p-12 text-center shadow-sm">
+                  <div className="w-16 h-16 bg-surface-container rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="material-symbols-outlined text-3xl text-on-surface-variant/40">folder_open</span>
+                  </div>
+                  <h5 className="text-lg font-bold text-on-surface mb-1">No analyses yet</h5>
+                  <p className="text-xs text-on-surface-variant max-w-sm mx-auto mb-6 leading-relaxed">
+                    Stress-test your startup assumptions and run your first deterministic 9-stage analysis validation.
+                  </p>
+                  <Link
+                    href="/wizard"
+                    className="inline-flex items-center gap-2 bg-primary text-on-primary px-6 py-2.5 rounded-lg text-xs font-bold hover:opacity-90 transition-all active:scale-95 shadow-sm"
+                  >
+                    <span className="material-symbols-outlined text-sm">rocket_launch</span>
+                    <span>Start Analysis</span>
+                  </Link>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {displayedProjects.map((p) => (
-                    <div
-                      key={p.id}
-                      className="group bg-white p-6 rounded-xl micro-shadow border border-outline-variant/30 hover:border-secondary/40 transition-all cursor-pointer hover:shadow-md"
-                      onClick={() => handleProjectClick(p.id)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === "Enter" && handleProjectClick(p.id)}
-                    >
-                      <div className="flex justify-between items-start mb-4">
-                        <div className={`w-12 h-12 ${p.scoreBg || "bg-secondary-container"} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                          <span className="material-symbols-outlined text-secondary">
-                            {(p as any).icon || "lightbulb"}
-                          </span>
-                        </div>
-                        <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 font-mono text-xs rounded border border-emerald-500/15">
-                          {p.stage}
-                        </span>
-                      </div>
-                      <h5 className="text-lg font-bold mb-1 text-on-surface group-hover:text-secondary transition-colors">
-                        {p.name}
-                      </h5>
-                      <p className="text-on-surface-variant text-sm mb-6 line-clamp-2">
-                        {p.description}
-                      </p>
-                      <div className="flex items-center justify-between border-t border-outline-variant/20 pt-4">
-                        <div className="flex flex-col">
-                          <span className="font-mono text-[10px] text-on-surface-variant uppercase">
-                            Venture Score
-                          </span>
-                          <span className={`font-mono text-sm font-bold mt-0.5 ${(p as any).scoreColor || "text-on-surface"}`}>
-                            {p.score}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {p.status === "pending" ? (
-                            <>
-                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping"></div>
-                              <span className="font-mono text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">Analyzing</span>
-                            </>
-                          ) : (
-                            <span className="flex items-center gap-1 font-mono text-[10px] text-emerald-600 font-semibold">
-                              <span className="material-symbols-outlined text-sm">verified</span>
-                              Analyzed
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                /* Analyses Table */
+                <div className="bg-white rounded-xl border border-outline-variant/30 overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse min-w-[600px]">
+                      <thead>
+                        <tr className="bg-surface-container-low border-b border-outline-variant/20 font-bold uppercase tracking-wider text-on-surface-variant">
+                          <th className="p-4">Name</th>
+                          <th className="p-4">Score</th>
+                          <th className="p-4">Status</th>
+                          <th className="p-4">Date</th>
+                          <th className="p-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-outline-variant/10 text-on-surface-variant font-medium">
+                        {displayedProjects.map((p) => {
+                          const isPending = p.status === "pending";
+                          return (
+                            <tr key={p.id} className="hover:bg-surface-container-low/30 transition-colors">
+                              <td className="p-4">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 rounded-lg ${p.scoreBg || "bg-secondary-container"} flex items-center justify-center`}>
+                                    <span className="material-symbols-outlined text-secondary text-base">
+                                      {(p as any).icon || "lightbulb"}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <div className="font-bold text-on-surface text-sm">{p.name}</div>
+                                    <div className="text-[10px] text-on-surface-variant mt-0.5 line-clamp-1 max-w-[200px]">{p.description}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-4 font-mono font-bold text-sm text-on-surface">
+                                {p.score}
+                              </td>
+                              <td className="p-4">
+                                {isPending ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/15">
+                                    <span className="w-1 h-1 bg-amber-500 rounded-full animate-ping" />
+                                    Processing
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/15">
+                                    Completed
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-4 text-on-surface-variant font-mono">
+                                {p.time}
+                              </td>
+                              <td className="p-4 text-right space-x-2">
+                                <button
+                                  onClick={() => handleProjectClick(p.id)}
+                                  className="px-3 py-1.5 bg-surface hover:bg-secondary hover:text-white border border-outline-variant text-on-surface font-semibold rounded-lg transition-colors text-[11px]"
+                                >
+                                  View Report
+                                </button>
+                                {p.id !== "demo-healthsync-001" && (
+                                  <button
+                                    onClick={() => {
+                                      if (confirm(`Are you sure you want to delete ${p.name}?`)) {
+                                        handleDeleteProject(p.id);
+                                      }
+                                    }}
+                                    className="px-3 py-1.5 bg-surface hover:bg-error hover:text-white border border-outline-variant text-error font-semibold rounded-lg transition-colors text-[11px]"
+                                  >
+                                    Delete
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </section>
