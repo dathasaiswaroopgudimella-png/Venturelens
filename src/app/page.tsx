@@ -29,8 +29,8 @@ export default function LandingPage() {
             <Link className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200" href="/pricing">
               Pricing
             </Link>
-            <Link className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200" href="/about">
-              About
+            <Link className="text-on-surface-variant hover:text-on-surface hover:opacity-80 transition-all duration-200" href="/templates">
+              Templates
             </Link>
           </nav>
           <div className="flex items-center gap-4">

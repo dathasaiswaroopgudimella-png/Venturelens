@@ -10,7 +10,7 @@ export default function ContactPage() {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !message) {
       toast.warning("Incomplete form", {
@@ -20,16 +20,34 @@ export default function ContactPage() {
       return;
     }
     setSending(true);
-    setTimeout(() => {
-      toast.success("Message sent successfully", {
-        description: "We will get back to you at " + email + " within 24 hours.",
-        duration: 4000,
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, message }),
       });
-      setName("");
-      setEmail("");
-      setMessage("");
+      if (res.ok) {
+        toast.success("Message sent successfully", {
+          description: `We'll get back to you at ${email} within 24 hours.`,
+          duration: 4000,
+        });
+        setName("");
+        setEmail("");
+        setMessage("");
+      } else {
+        toast.error("Submission failed", {
+          description: "Please try again or email hello@venturelens.ai directly.",
+          duration: 4000,
+        });
+      }
+    } catch {
+      toast.error("Network error", {
+        description: "Could not reach server. Please try again.",
+        duration: 3000,
+      });
+    } finally {
       setSending(false);
-    }, 1000);
+    }
   };
 
   return (

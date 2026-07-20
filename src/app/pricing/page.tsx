@@ -159,6 +159,69 @@ export default function PricingPage() {
         </div>
       </main>
 
+      {/* FAQ Section */}
+      <section id="faq" className="max-w-3xl mx-auto px-6 py-20">
+        <h2 className="text-3xl font-extrabold text-center tracking-tight text-on-surface mb-12">
+          Frequently Asked Questions
+        </h2>
+        <div className="space-y-4">
+          {[
+            {
+              q: "What's included in the deterministic engine?",
+              a: "The deterministic rule engine applies 16 logic checks across problem clarity, market sizing, competitive density, pricing consistency, GTM feasibility, team credibility, and moat defensibility. It generates a weighted 0-100 score without relying on language model hallucinations.",
+            },
+            {
+              q: "How is this different from ChatGPT or other AI tools?",
+              a: "ChatGPT generates plausible-sounding text but cannot apply structured rules, verify internal consistency, or cross-reference your claims against real market data. VentureLens uses a deterministic scoring layer first, then uses AI only as a secondary cross-verification engine — not the primary source of truth.",
+            },
+            {
+              q: "Can I export reports as PDF?",
+              a: "PDF export is on the Pro plan roadmap. During beta, you can use your browser's print-to-PDF function to save any report page.",
+            },
+            {
+              q: "Do you store my startup ideas?",
+              a: "All startup submissions are encrypted at rest and in transit. Your ideas are never shared with third parties, sold to investors, or used to train AI models without explicit consent. Enterprise users can enable full self-hosting.",
+            },
+            {
+              q: "Can I cancel my subscription anytime?",
+              a: "Yes. Pro and Enterprise plans are month-to-month with no lock-in. Cancel from your billing settings at any time and your access continues through the end of the paid period.",
+            },
+          ].map((item, i) => (
+            <details
+              key={i}
+              className="group bg-white border border-outline-variant/30 rounded-xl overflow-hidden shadow-sm"
+            >
+              <summary className="flex items-center justify-between px-6 py-4 cursor-pointer font-semibold text-sm text-on-surface list-none hover:bg-surface-container-low transition-colors">
+                <span>{item.q}</span>
+                <span className="material-symbols-outlined text-on-surface-variant group-open:rotate-180 transition-transform text-lg">
+                  expand_more
+                </span>
+              </summary>
+              <div className="px-6 pb-5 text-xs text-on-surface-variant leading-relaxed border-t border-outline-variant/20 pt-4">
+                {item.a}
+              </div>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA Banner */}
+      <section className="bg-primary/5 border-y border-primary/10 py-16 text-center px-6">
+        <h2 className="text-2xl font-extrabold tracking-tight text-on-surface mb-3">
+          Still unsure? Try a free analysis.
+        </h2>
+        <p className="text-on-surface-variant text-sm mb-8 max-w-md mx-auto">
+          No credit card required. Run your startup through the full deterministic pipeline right now.
+        </p>
+        <Link
+          href="/wizard"
+          className="inline-flex items-center gap-2 bg-primary text-on-primary px-8 py-3.5 rounded-xl font-bold text-sm hover:opacity-90 transition-all active:scale-95 shadow-md"
+        >
+          <span className="material-symbols-outlined text-lg">rocket_launch</span>
+          <span>Start Free Analysis</span>
+        </Link>
+      </section>
+
       <footer className="bg-surface border-t border-outline-variant/30 py-8 text-center text-xs text-on-surface-variant">
         <p>© 2026 VentureLens AI. All rights reserved. <Link href="/" className="underline hover:text-secondary ml-2">Home</Link></p>
       </footer>

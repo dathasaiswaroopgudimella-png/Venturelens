@@ -160,44 +160,44 @@ export default function WizardPage() {
               <span className="material-symbols-outlined text-lg">folder_open</span>
               <span>Projects</span>
             </Link>
-            <a
+            <Link
+              href="/dashboard"
               className="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-container-high transition-colors text-sm rounded-lg"
-              href="#"
             >
               <span className="material-symbols-outlined text-lg">analytics</span>
               <span>Reports</span>
-            </a>
-            <a
+            </Link>
+            <Link
+              href="/templates"
               className="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-container-high transition-colors text-sm rounded-lg"
-              href="#"
             >
               <span className="material-symbols-outlined text-lg">dashboard_customize</span>
               <span>Templates</span>
-            </a>
-            <a
+            </Link>
+            <Link
+              href="/settings"
               className="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-container-high transition-colors text-sm rounded-lg"
-              href="#"
             >
               <span className="material-symbols-outlined text-lg">settings</span>
               <span>Settings</span>
-            </a>
+            </Link>
           </nav>
         </div>
         <div className="pt-4 border-t border-outline-variant/10 space-y-1">
-          <a
+          <Link
             className="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:text-on-surface text-xs font-semibold"
-            href="#"
+            href="/contact"
           >
             <span className="material-symbols-outlined text-base">help</span>
             <span>Support</span>
-          </a>
+          </Link>
           <div className="flex items-center gap-3 px-4 py-4 mt-2">
             <div className="w-8 h-8 rounded-full border border-outline-variant/50 bg-secondary-container flex items-center justify-center font-bold text-secondary text-xs">
-              MC
+              VL
             </div>
             <div>
-              <p className="font-semibold text-xs text-on-surface">Marcus Chen</p>
-              <p className="text-[10px] text-on-surface-variant">Premium Partner</p>
+              <p className="font-semibold text-xs text-on-surface">VentureLens User</p>
+              <p className="text-[10px] text-on-surface-variant">Beta Access</p>
             </div>
           </div>
         </div>
