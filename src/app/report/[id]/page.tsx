@@ -622,10 +622,10 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 <p className="text-xs text-on-surface-variant">© 2026 VentureLens AI. All rights reserved.</p>
               </div>
               <div className="flex gap-8 text-xs text-on-surface-variant font-semibold">
-                <a className="hover:text-secondary transition-colors" href="#">Privacy Policy</a>
-                <a className="hover:text-secondary transition-colors" href="#">Terms of Service</a>
-                <a className="hover:text-secondary transition-colors" href="#">Security</a>
-                <a className="hover:text-secondary transition-colors" href="#">Contact</a>
+                <Link className="hover:text-secondary transition-colors" href="/privacy">Privacy Policy</Link>
+                <Link className="hover:text-secondary transition-colors" href="/terms">Terms of Service</Link>
+                <Link className="hover:text-secondary transition-colors" href="/about">About</Link>
+                <Link className="hover:text-secondary transition-colors" href="/contact">Contact</Link>
               </div>
             </div>
           </footer>

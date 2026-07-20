@@ -59,6 +59,20 @@ export default function DashboardPage() {
   // Always show the demo project first, then real ones
   const displayedProjects = [demoProject, ...dbProjects];
 
+  // KPI calculations
+  const totalAnalyses = projects.length + 1;
+  const reportsGenerated = projects.filter((p) => p.reports?.[0]).length + 1;
+  const totalScoreProjects = projects.filter((p) => p.reports?.[0]?.overall_score);
+  const avgScore = totalScoreProjects.length > 0
+    ? Math.round((84 + totalScoreProjects.reduce((sum, p) => sum + p.reports[0].overall_score, 0)) / (totalScoreProjects.length + 1))
+    : 84;
+  
+  const thisMonthCount = projects.filter((p) => {
+    const createdDate = new Date(p.created_at);
+    const now = new Date();
+    return createdDate.getMonth() === now.getMonth() && createdDate.getFullYear() === now.getFullYear();
+  }).length + 1;
+
   const handleProjectClick = (projectId: string) => {
     if (projectId === "demo-healthsync-001") {
       // Load the pre-built demo report into state and save to localStorage
@@ -189,58 +203,53 @@ export default function DashboardPage() {
         </header>
 
         <div className="p-8 space-y-10">
-          {/* Global Metrics Section */}
-          <section className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="col-span-1 md:col-span-2 bg-white p-6 rounded-xl micro-shadow border border-outline-variant/30 flex flex-col justify-between">
+          {/* KPI Cards */}
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Card 1: Total Analyses */}
+            <div className="bg-white p-6 rounded-xl micro-shadow border border-outline-variant/30 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-mono text-xs text-on-surface-variant uppercase tracking-wider font-bold">Total Analyses</span>
+                <span className="material-symbols-outlined text-secondary text-xl">description</span>
+              </div>
               <div>
-                <p className="font-mono text-xs text-on-surface-variant uppercase tracking-widest mb-1">
-                  Demo Portfolio Score
-                </p>
-                <h3 className="text-3xl font-extrabold text-on-surface tracking-tight">
-                  HealthSync AI — 84/100
-                </h3>
-              </div>
-              <div className="mt-4">
-                <div className="h-2 w-full bg-surface-container-high rounded-full overflow-hidden">
-                  <div className="h-full bg-secondary w-[84%] transition-all duration-700"></div>
-                </div>
-                <div className="flex justify-between mt-2 font-mono text-xs text-on-surface-variant">
-                  <span>0</span>
-                  <span className="text-secondary font-bold">84% — Strong Investment Signal</span>
-                  <span>100</span>
-                </div>
+                <h3 className="text-3xl font-extrabold text-on-surface tracking-tight">{totalAnalyses}</h3>
+                <p className="text-[11px] text-on-surface-variant mt-1">Completed & draft startup ideas</p>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-xl micro-shadow border border-outline-variant/30 flex flex-col items-center justify-center text-center">
-              <span className="material-symbols-outlined text-4xl text-on-surface-variant mb-2">description</span>
-              <p className="font-mono text-xs text-on-surface-variant uppercase tracking-widest">
-                Total Analyses
-              </p>
-              <h3 className="text-3xl font-bold text-on-surface leading-tight mt-1">
-                {1 + projects.length}
-              </h3>
+
+            {/* Card 2: Average Score */}
+            <div className="bg-white p-6 rounded-xl micro-shadow border border-outline-variant/30 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-mono text-xs text-on-surface-variant uppercase tracking-wider font-bold">Average Score</span>
+                <span className="material-symbols-outlined text-emerald-500 text-xl">star</span>
+              </div>
+              <div>
+                <h3 className="text-3xl font-extrabold text-on-surface tracking-tight">{avgScore}/100</h3>
+                <p className="text-[11px] text-on-surface-variant mt-1">Weighted validation strength</p>
+              </div>
             </div>
-            <div className="bg-primary text-white p-6 rounded-xl shadow-lg flex flex-col justify-between">
-              <p className="font-mono text-xs text-outline-variant/60 uppercase tracking-widest">
-                Quick Actions
-              </p>
-              <div className="space-y-3 mt-4">
-                <Link
-                  href="/wizard"
-                  className="flex items-center justify-between w-full p-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/10 group text-sm font-semibold"
-                >
-                  <span>New Analysis</span>
-                  <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
-                    arrow_forward
-                  </span>
-                </Link>
-                <button
-                  onClick={() => handleComingSoon("Data upload")}
-                  className="flex items-center justify-between w-full p-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/10 group text-sm font-semibold"
-                >
-                  <span>Upload Data</span>
-                  <span className="material-symbols-outlined text-lg">upload</span>
-                </button>
+
+            {/* Card 3: Reports Generated */}
+            <div className="bg-white p-6 rounded-xl micro-shadow border border-outline-variant/30 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-mono text-xs text-on-surface-variant uppercase tracking-wider font-bold">Reports Built</span>
+                <span className="material-symbols-outlined text-blue-500 text-xl">assignment_turned_in</span>
+              </div>
+              <div>
+                <h3 className="text-3xl font-extrabold text-on-surface tracking-tight">{reportsGenerated}</h3>
+                <p className="text-[11px] text-on-surface-variant mt-1">Deep strategic evaluations</p>
+              </div>
+            </div>
+
+            {/* Card 4: This Month */}
+            <div className="bg-white p-6 rounded-xl micro-shadow border border-outline-variant/30 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-mono text-xs text-on-surface-variant uppercase tracking-wider font-bold">This Month</span>
+                <span className="material-symbols-outlined text-amber-500 text-xl">calendar_today</span>
+              </div>
+              <div>
+                <h3 className="text-3xl font-extrabold text-on-surface tracking-tight">{thisMonthCount}</h3>
+                <p className="text-[11px] text-on-surface-variant mt-1">Quota usage this cycle</p>
               </div>
             </div>
           </section>
@@ -444,6 +453,66 @@ export default function DashboardPage() {
               </div>
             </section>
           </div>
+
+          {/* Quick Action Cards */}
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+            <Link
+              href="/analyze"
+              className="bg-white p-6 rounded-xl border border-outline-variant/30 hover:border-secondary/40 transition-all micro-shadow hover:shadow-md flex flex-col justify-between group"
+            >
+              <div>
+                <span className="material-symbols-outlined text-secondary text-2xl mb-3 block">rocket_launch</span>
+                <h4 className="text-sm font-bold text-on-surface mb-1 group-hover:text-secondary transition-colors">
+                  New Venture Analysis
+                </h4>
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Start a new 9-stage deterministic validation pipeline for your startup.
+                </p>
+              </div>
+              <span className="text-[10px] font-bold text-secondary mt-4 flex items-center gap-1">
+                <span>Start Wizard</span>
+                <span className="material-symbols-outlined text-xs">arrow_forward</span>
+              </span>
+            </Link>
+
+            <Link
+              href="/templates"
+              className="bg-white p-6 rounded-xl border border-outline-variant/30 hover:border-secondary/40 transition-all micro-shadow hover:shadow-md flex flex-col justify-between group"
+            >
+              <div>
+                <span className="material-symbols-outlined text-secondary text-2xl mb-3 block">dashboard_customize</span>
+                <h4 className="text-sm font-bold text-on-surface mb-1 group-hover:text-secondary transition-colors">
+                  Startup Blueprints
+                </h4>
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Pre-fill your parameters using 6 pre-built industry sector templates.
+                </p>
+              </div>
+              <span className="text-[10px] font-bold text-secondary mt-4 flex items-center gap-1">
+                <span>Browse Templates</span>
+                <span className="material-symbols-outlined text-xs">arrow_forward</span>
+              </span>
+            </Link>
+
+            <Link
+              href="/settings"
+              className="bg-white p-6 rounded-xl border border-outline-variant/30 hover:border-secondary/40 transition-all micro-shadow hover:shadow-md flex flex-col justify-between group"
+            >
+              <div>
+                <span className="material-symbols-outlined text-secondary text-2xl mb-3 block">manage_accounts</span>
+                <h4 className="text-sm font-bold text-on-surface mb-1 group-hover:text-secondary transition-colors">
+                  API Credentials & Team
+                </h4>
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Generate tokens for REST endpoints and configure workspaces.
+                </p>
+              </div>
+              <span className="text-[10px] font-bold text-secondary mt-4 flex items-center gap-1">
+                <span>Configure Settings</span>
+                <span className="material-symbols-outlined text-xs">arrow_forward</span>
+              </span>
+            </Link>
+          </section>
 
           {/* Footer */}
           <footer className="pt-8 border-t border-outline-variant/30 flex flex-col md:flex-row justify-between items-center text-xs text-on-surface-variant gap-4">
