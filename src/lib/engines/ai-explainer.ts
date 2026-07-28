@@ -16,6 +16,11 @@ export class AIExplainer {
   }
 
   private validateAnalysis(raw: any, facts: ExtractedFacts, answers: QuestionnaireAnswers): AIAnalysis {
+    const industry = Array.isArray(facts?.market?.industryTags) ? facts.market.industryTags.join("/") : "the target";
+    const icp = facts?.customer?.icp || answers?.targetCustomer || "target customers";
+    const problem = facts?.problem?.description || answers?.problemSolved || "the identified problem";
+    const tag0 = facts?.market?.industryTags?.[0] || "operations";
+
     if (!raw || typeof raw !== "object") {
       return this.defaultAnalysis(facts, answers);
     }
