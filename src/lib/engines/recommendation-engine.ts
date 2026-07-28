@@ -9,6 +9,10 @@ export class RecommendationEngine {
     const recommendations: Recommendation[] = [];
     let recIdCounter = 1;
 
+    const icp = facts.customer.icp || "target customers";
+    const tag0 = facts.market.industryTags[0] || "industry";
+    const comps = facts.competition.competitorList.join(", ") || "existing alternatives";
+
     const addRec = (priority: "Critical" | "High" | "Medium" | "Low", title: string, description: string, timeframe: string) => {
       recommendations.push({
         id: `REC_${String(recIdCounter++).padStart(2, "0")}`,
@@ -25,29 +29,29 @@ export class RecommendationEngine {
       if (f.id === "RULE_02_TINY_TAM") {
         addRec(
           "Critical",
-          "Pivot or Expand Addressable Market Scope",
-          "Identify adjacent customer niches, alternative use-cases, or global expansion plans to expand your Total Addressable Market (TAM) to support venture scale.",
+          `Pivot or Expand TAM Beyond Current ${tag0} Niche`,
+          `Expand customer target definitions beyond current limits to encompass broader segments within ${facts.market.geography || 'global markets'} to support venture-scale growth.`,
           "Immediate Action"
         );
       } else if (f.id === "RULE_03_CROWDED_WEAK_MOAT") {
         addRec(
           "Critical",
-          "Establish and Define a Defensible Moat",
-          "Since you are entering a crowded market (4+ competitors), specify a technological advantage, network effect, or data moat that protects your pricing power.",
+          `Build Defensible Moat Against ${comps}`,
+          `With established players like ${comps} in the market, formulate a technical advantage, network effect, or data moat to defend profit margins.`,
           "Immediate Action"
         );
       } else if (f.id === "RULE_08_NO_VALIDATION") {
         addRec(
           "Critical",
-          "Run Primary Customer Interviews",
-          "Acquire initial demand signals by interviewing 15-20 prospective target customers and documenting their exact pain points and willingness to pay.",
+          `Run 15 Direct Customer Interviews with ${icp}`,
+          `Acquire primary demand signals by interviewing target buyers in ${icp} to quantify exact pain severity and price sensitivity.`,
           "Immediate Action"
         );
       } else if (f.id === "RULE_06_COMPLEXITY_RESOURCES") {
         addRec(
           "Critical",
-          "Recruit Technical/Domain Co-founders",
-          "The proposed product has high execution complexity. You need to onboard co-founders or key advisors with specific domain credentials to demonstrate execution capability.",
+          `Recruit Technical Co-founders for ${tag0} Execution`,
+          `The proposed concept involves high execution complexity. Onboard co-founders or key advisors with specific engineering credentials.`,
           "Immediate Action"
         );
       }
@@ -59,40 +63,40 @@ export class RecommendationEngine {
       if (w.id === "RULE_01_PRICE_ICP_MISMATCH") {
         addRec(
           "High",
-          "Re-align Pricing Strategy with Target ICP",
-          "Lower initial price barriers or introduce tiered freemium structures if targeting consumer groups, or pivot to higher value B2B segments.",
+          `Re-align Pricing Model for ${icp}`,
+          `Adjust enterprise price points to align with purchasing behavior of ${icp}, or shift positioning to higher-budget B2B decision makers.`,
           "Next 30 Days"
         );
       } else if (w.id === "RULE_04_MARKETPLACE_SUPPLY") {
         addRec(
           "High",
-          "Draft Supply-Side Acquisition Roadmap",
-          "Design a direct incentives program or integrations strategy to secure the supply side of your marketplace before launch.",
+          "Draft Supply-Side Acquisition Incentive Plan",
+          "Design a direct incentives program or API integration strategy to secure supply-side inventory before public launch.",
           "Next 30 Days"
         );
       } else if (w.id === "RULE_05_SAAS_ONE_TIME") {
         addRec(
           "High",
-          "Pivot to Recurring SaaS Pricing Options",
-          "Shift from lifetime/one-time pricing to recurring monthly/annual subscription plans to improve customer lifetime value (LTV).",
+          "Transition to Recurring SaaS Subscription Pricing",
+          "Shift from lifetime/one-time pricing to recurring monthly or annual subscription plans to maximize customer LTV.",
           "Next 30 Days"
         );
       } else if (w.id === "RULE_12_ENTERPRISE_SALES_GAP") {
         addRec(
           "High",
-          "Design High-Touch B2B Sales Workflow",
-          "Create a high-touch sales pipeline outlining outbound outreach, software trial contracts, and procurement security audits.",
+          `Design B2B Enterprise Sales Motion for ${icp}`,
+          `Build a structured outbound sales pipeline detailing security reviews, pilot trial terms, and executive buy-in steps for ${icp}.`,
           "Next 30 Days"
         );
       }
     });
 
     // Score checks - add recommendations if specific dimension is weak
-    if (scores.competition.score < 60 && !recommendations.some((r) => r.title.includes("Moat"))) {
+    if (scores.competition.score < 65 && !recommendations.some((r) => r.title.includes("Moat"))) {
       addRec(
         "High",
-        "Conduct In-Depth Competitor Audit",
-        "Analyze direct and indirect alternatives to map feature overlaps, pricing differentials, and identify product whitespace.",
+        `Conduct Competitive Feature Audit vs ${comps}`,
+        `Perform detailed feature and pricing breakdowns comparing your product directly against ${comps} to identify whitespace.`,
         "Next 30 Days"
       );
     }
@@ -100,8 +104,8 @@ export class RecommendationEngine {
     if (scores.risk.score < 65) {
       addRec(
         "Medium",
-        "Perform Compliance & Regulatory Audit",
-        "Formulate a privacy and regulatory compliance strategy (e.g. GDPR, HIPAA, SOC2) matching the requirements of your targeted industries.",
+        `Perform Regulatory & Compliance Audit in ${facts.market.geography}`,
+        `Establish data privacy, legal approval, and compliance protocols tailored to ${tag0} operations.`,
         "Next 90 Days"
       );
     }
@@ -109,18 +113,18 @@ export class RecommendationEngine {
     if (scores.scalability.score < 70) {
       addRec(
         "Medium",
-        "Automate User Onboarding Loops",
-        "Introduce self-serve tutorials and automated signup flows to minimize customer onboarding friction and lower operational overhead.",
+        `Automate Self-Serve Onboarding for ${icp}`,
+        `Introduce automated trial signup flows and interactive tutorials to minimize human-assisted onboarding friction.`,
         "Next 90 Days"
       );
     }
 
-    // 3. Low priority items
+    // 3. Low priority fallback items
     if (recommendations.length < 3) {
       addRec(
         "Low",
-        "Expand Industry Advisor Network",
-        "Recruit 1-2 seasoned industry veterans to your advisory board to increase institutional trust and accelerate partnership sales.",
+        `Expand ${tag0} Strategic Advisor Network`,
+        `Recruit 1-2 seasoned industry veterans to your advisory board to build trust with ${icp} and open enterprise partnership doors.`,
         "Ongoing"
       );
     }
