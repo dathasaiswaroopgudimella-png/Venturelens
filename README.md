@@ -1,71 +1,89 @@
-# Venturelens — AI-Powered VC & Startup Intelligence Engine
+# VentureLens AI — Venture Capital & Startup Decision Intelligence Platform
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black.svg?logo=nextdotjs)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg?logo=typescript)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC.svg?logo=tailwind-css)](https://tailwindcss.com/)
-[![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E.svg?logo=supabase)](https://supabase.com/)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16.2.10%20(Turbopack)-black.svg?logo=nextdotjs)](https://nextjs.org/)
+[![TypeScript 5](https://img.shields.io/badge/TypeScript-5.0-blue.svg?logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS 4](https://img.shields.io/badge/Tailwind-CSS%204-38B2AC.svg?logo=tailwind-css)](https://tailwindcss.com/)
+[![OpenRouter AI](https://img.shields.io/badge/OpenRouter-AI%20Engine-purple.svg)](https://openrouter.ai/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E.svg?logo=supabase)](https://supabase.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Venturelens** is an automated venture capital analytics platform engineered for investors, incubators, and startup founders. It leverages deterministic rule engines, structured AI explainers, and real-time knowledge graphs to calculate startup defensibility, market alignment, unit economics, and investment risk profiles.
+**VentureLens AI** is a state-of-the-art automated venture capital decision intelligence platform designed for startup founders, venture capitalists, angel investors, and incubators. It combines deterministic heuristic rule engines with multi-provider neural reasoning to perform rigorous, non-generic evaluations of early-stage venture ideas.
 
 ---
 
-## Core Capabilities
+## 🌟 Core System Highlights
 
-- **Multi-Engine Evaluation Pipeline**: Combines scoring engines, consistency verifiers, rule engines, and structured AI extractors.
-- **Interactive Investment Wizard**: Step-by-step evaluation workflow for startup pitch decks, financials, and team profiles.
-- **Knowledge Graph Synthesis**: Maps founder expertise, market TAM/SAM, competitive moats, and valuation metrics.
-- **Comprehensive Reporting Dashboard**: Generates investor-grade PDF/UI evaluation reports with risk radar charts and actionable recommendations.
-- **Supabase Row-Level Security**: Enterprise-grade persistence layer enforcing strict access control policies.
+- 🧠 **9-Stage Decision Intelligence Pipeline**: Executes structured entity extraction, knowledge graph synthesis, 16 logic checks, heuristic scoring, competitor search, and strategic AI cross-verification.
+- 📄 **Multimodal Pitch Deck Parser**: Reads and extracts full venture specifications from `.pdf`, `.docx`, `.doc`, `.txt`, and `.md` pitch decks automatically using AI.
+- 🎙️ **Interactive Voice Pitch Note**: Built-in dual MediaRecorder and Web Speech API engine that captures spoken voice pitches, removes filler words ("um", "uh"), and populates venture parameters in real time.
+- 🔍 **Real-World OpenRouter Market Research**: Performs context-aware competitive research, identifying incumbents, TAM benchmarks, and sector growth vectors without hallucinated fallbacks.
+- 📊 **Dynamic Heuristic Scoring**: Evaluates 10 distinct venture dimensions with realistic score distributions (no static template scores).
+- 📈 **Investor Memos & GTM Roadmaps**: Generates YC/Sequoia-grade SWOT analysis, 90-day execution roadmaps, and landing page copy.
 
 ---
 
-## System Architecture
+## 🏗️ System Architecture
 
 ```mermaid
 flowchart TD
-    User[Investor / Founder UI] -->|Input Deck & Financials| Wizard[Analysis Wizard]
-    Wizard -->|POST /api/analyze| API[Next.js API Engine]
+    User[Founder / Investor] -->|Text / Pitch Deck / Voice Note| Wizard[Wizard Interface]
+    Wizard -->|POST /api/analyze| Pipeline[9-Stage Decision Pipeline]
     
-    subgraph Core Engines
-        API --> RuleEng[Rule Engine]
-        API --> ScoreEng[Scoring Engine]
-        API --> ConsistEng[Consistency Engine]
-        API --> KG[Knowledge Graph Engine]
-        API --> AIExpl[AI Explainer Module]
+    subgraph Decision Engine
+        Pipeline --> Extractor[1. Structured Fact Extractor]
+        Pipeline --> KG[2. Knowledge Graph Builder]
+        Pipeline --> Research[3. OpenRouter Market Research]
+        Pipeline --> Rules[4. Deterministic Rule Engine]
+        Pipeline --> Scoring[5. Heuristic Scoring Engine]
+        Pipeline --> Evidence[6. Evidence Engine]
+        Pipeline --> Consistency[7. Consistency Engine]
+        Pipeline --> Recs[8. Recommendation Engine]
+        Pipeline --> AIExplainer[9. AI Strategic Explainer & Cross-Verifier]
     end
 
-    RuleEng & ScoreEng & ConsistEng & KG & AIExpl -->|Consolidated Report| Report[Investment Memo Generator]
-    Report -->|Persist Metadata| DB[(Supabase Postgres)]
-    Report -->|Render Visual Analysis| Dashboard[Analytics Dashboard]
+    Pipeline -->|Unified Intelligence Report| Storage[(Supabase / LocalStorage)]
+    Storage --> Dashboard[Venture Portfolio Dashboard]
+    Dashboard --> ReportPage[Investor Report & Strategic Memo]
 ```
 
 ---
 
-## Repository Structure
+## 📂 Repository Organization
 
 ```
 Venturelens/
 ├── src/
-│   ├── app/                # Next.js App Router (pages, layouts, API routes)
+│   ├── app/                      # Next.js App Router
+│   │   ├── api/                  # Production API Routes
+│   │   │   ├── analyze/          # Main 9-stage analysis pipeline
+│   │   │   ├── parse-document/   # Pitch Deck PDF/DOCX AI parser
+│   │   │   ├── format-voice/     # Voice speech-to-text pitch structurer
+│   │   │   ├── projects/         # Project persistence API
+│   │   │   └── reports/          # Report retrieval API
+│   │   ├── dashboard/            # Venture Portfolio Dashboard
+│   │   ├── wizard/               # Multi-step Evaluation Wizard
+│   │   ├── report/[id]/          # Interactive Report & Memo View
+│   │   ├── templates/            # Sector Startup Evaluation Templates
+│   │   ├── platform/             # Architecture & API documentation
+│   │   └── features/             # System feature deep-dives
 │   ├── lib/
-│   │   └── engines/        # Deterministic scoring, rule & AI explainer engines
-│   ├── stores/             # Zustand state management
-│   ├── types/              # TypeScript interface definitions & schemas
-│   └── utils/
-│       └── supabase/       # Supabase client, server, and middleware helpers
-├── supabase/               # PostgreSQL schema & security migrations
-├── public/                 # Static assets & vectors
-├── LICENSE                 # MIT License
-├── package.json            # Node project configuration
-└── .github/workflows/ci.yml # GitHub Actions CI workflow
+│   │   └── engines/              # Core Evaluation Engines
+│   │       ├── ai-provider.ts    # Multi-provider OpenRouter/Gemini Engine
+│   │       ├── scoring-engine.ts # Dynamic 10-dimension scoring engine
+│   │       ├── external-research.ts # OpenRouter AI market intelligence
+│   │       └── ai-explainer.ts   # Dynamic SWOT & cross-verifier
+│   ├── stores/                   # Zustand state management
+│   └── types/                    # TypeScript interfaces & report schemas
+├── supabase/                     # PostgreSQL migrations & schema definition
+├── LICENSE                       # MIT License
+└── package.json                  # Project dependencies & scripts
 ```
 
 ---
 
-## Quick Start
+## ⚡ Quick Start
 
-### 1. Installation
+### 1. Clone & Install Dependencies
 
 ```bash
 git clone https://github.com/dathasaiswaroopgudimella-png/Venturelens.git
@@ -73,23 +91,30 @@ cd Venturelens
 npm install
 ```
 
-### 2. Environment Configuration
+### 2. Configure Environment Variables
 
-Copy `.env.example` to `.env.local`:
+Create `.env.local` based on `.env.example`:
 
-```bash
-cp .env.example .env.local
+```env
+# AI Providers
+OPENROUTER_API_KEY=sk-or-v1-...
+GEMINI_API_KEY=...
+
+# Database (Optional for guest mode)
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 ```
 
-### 3. Start Development Server
+### 3. Run Locally
 
 ```bash
 npm run dev
 ```
-Open `http://localhost:3000` to access the application interface.
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## License
+## 📜 License
 
-This repository is distributed under the [MIT License](LICENSE).
+This project is open-source software licensed under the [MIT License](LICENSE).

@@ -152,64 +152,82 @@ export default function WizardPage() {
     }
   };
 
-  // Voice Input Speech Recognition Handlers
-  const startVoiceRecording = () => {
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+
+  // Voice Input Speech & Audio MediaRecorder Handlers
+  const startVoiceRecording = async () => {
+    setVoiceModalOpen(true);
+    setIsVoiceRecording(true);
+
+    // 1. Try HTML5 MediaRecorder for audio recording
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaStreamRef.current = stream;
+        audioChunksRef.current = [];
+
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+          }
+        };
+        mediaRecorder.start(250);
+        mediaRecorderRef.current = mediaRecorder;
+      }
+    } catch (err: any) {
+      console.warn("MediaRecorder mic access warning:", err);
+    }
+
+    // 2. Try Web Speech API for real-time live preview text
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
-    if (!SpeechRecognition) {
-      toast.error("Browser speech recognition not supported", {
-        description: "Please use Chrome, Edge, or Safari for voice detection.",
-      });
-      return;
-    }
+    if (SpeechRecognition) {
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = "en-US";
 
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = "en-US";
+        recognition.onresult = (event: any) => {
+          let text = "";
+          for (let i = 0; i < event.results.length; i++) {
+            text += event.results[i][0].transcript;
+          }
+          if (text.trim()) {
+            setVoiceTranscript(text);
+          }
+        };
 
-      recognition.onresult = (event: any) => {
-        let text = "";
-        for (let i = 0; i < event.results.length; i++) {
-          text += event.results[i][0].transcript;
-        }
-        setVoiceTranscript(text);
-      };
+        recognition.onerror = (event: any) => {
+          console.warn("Speech recognition error:", event.error);
+        };
 
-      recognition.onerror = (event: any) => {
-        console.warn("Speech recognition error:", event.error);
-        setIsVoiceRecording(false);
-      };
-
-      recognition.onend = () => {
-        setIsVoiceRecording(false);
-      };
-
-      recognition.start();
-      recognitionRef.current = recognition;
-      setIsVoiceRecording(true);
-      setVoiceModalOpen(true);
-    } catch (err: any) {
-      console.error("Speech recognition start failed:", err);
-      toast.error("Could not access microphone.");
+        recognition.start();
+        recognitionRef.current = recognition;
+      } catch (err) {
+        console.warn("SpeechRecognition init warning:", err);
+      }
     }
   };
 
   const stopVoiceRecording = () => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try { recognitionRef.current.stop(); } catch (e) {}
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      try { mediaRecorderRef.current.stop(); } catch (e) {}
+    }
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
     }
     setIsVoiceRecording(false);
   };
 
   const handleFormatVoiceWithAI = async () => {
-    if (!voiceTranscript.trim()) {
-      toast.warning("No speech transcript detected yet.");
-      return;
-    }
-
     stopVoiceRecording();
     setIsFormattingVoice(true);
     const toastId = toast.loading("Structuring Voice Pitch with AI...", {
@@ -217,14 +235,32 @@ export default function WizardPage() {
     });
 
     try {
+      let audioBase64 = "";
+      if (audioChunksRef.current.length > 0) {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        audioBase64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            resolve(result ? result.split(",")[1] : "");
+          };
+          reader.readAsDataURL(audioBlob);
+        });
+      }
+
       const res = await fetch("/api/format-voice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: voiceTranscript }),
+        body: JSON.stringify({
+          transcript: voiceTranscript,
+          audioBase64,
+          mimeType: "audio/webm",
+        }),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to format voice input");
+        const errData = await res.json();
+        throw new Error(errData.error || "Failed to format voice input");
       }
 
       const data = await res.json();
@@ -250,9 +286,15 @@ export default function WizardPage() {
       setVoiceTranscript("");
     } catch (err: any) {
       console.error("Format voice error:", err);
-      // Fallback: raw transcript into idea
-      updateAnswer("idea", voiceTranscript);
-      toast.info("Voice transcript added to idea", { id: toastId });
+      if (voiceTranscript.trim()) {
+        updateAnswer("idea", voiceTranscript);
+        toast.info("Voice transcript added to idea box", { id: toastId });
+      } else {
+        toast.error("Voice input error", {
+          id: toastId,
+          description: err?.message || "Please speak clearly or type your idea.",
+        });
+      }
       setVoiceModalOpen(false);
     } finally {
       setIsFormattingVoice(false);
