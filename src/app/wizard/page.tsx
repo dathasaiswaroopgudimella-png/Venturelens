@@ -114,8 +114,113 @@ export default function WizardPage() {
     }
   };
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isVoiceRecording, setIsVoiceRecording] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (text) {
+        const cleanedText = text.replace(/[\r\n]+/g, " ").trim();
+        updateAnswer("idea", cleanedText);
+
+        if (/problem:/i.test(cleanedText)) {
+          const probMatch = cleanedText.match(/problem:\s*([^;.]+)/i);
+          if (probMatch?.[1]) updateAnswer("problemSolved", probMatch[1].trim());
+        }
+        if (/customer:|target:/i.test(cleanedText)) {
+          const custMatch = cleanedText.match(/(?:customer|target):\s*([^;.]+)/i);
+          if (custMatch?.[1]) updateAnswer("targetCustomer", custMatch[1].trim());
+        }
+        if (/competitor|competitors:/i.test(cleanedText)) {
+          const compMatch = cleanedText.match(/competitors?:\s*([^;.]+)/i);
+          if (compMatch?.[1]) updateAnswer("competitors", compMatch[1].trim());
+        }
+
+        toast.success("Document uploaded & parsed!", {
+          description: `Extracted ${cleanedText.split(/\s+/).length} words from ${file.name}`,
+          duration: 4000,
+        });
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const toggleVoiceRecording = () => {
+    if (isVoiceRecording) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsVoiceRecording(false);
+      toast.info("Voice recording stopped");
+      return;
+    }
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      toast.error("Browser speech recognition not supported", {
+        description: "Please use Chrome, Edge, or Safari for voice detection.",
+      });
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = "en-US";
+
+      recognition.onresult = (event: any) => {
+        let transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        if (transcript.trim()) {
+          const current = answers.idea ? answers.idea + " " + transcript : transcript;
+          updateAnswer("idea", current);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn("Speech recognition error:", event.error);
+        setIsVoiceRecording(false);
+        toast.error("Voice input error", { description: event.error });
+      };
+
+      recognition.onend = () => {
+        setIsVoiceRecording(false);
+      };
+
+      recognition.start();
+      recognitionRef.current = recognition;
+      setIsVoiceRecording(true);
+      toast.success("Voice detection active", {
+        description: "Speak your startup idea clearly into your microphone...",
+        duration: 4000,
+      });
+    } catch (err: any) {
+      console.error("Speech recognition start failed:", err);
+      toast.error("Could not access microphone");
+    }
+  };
+
   return (
     <div className="flex h-screen w-full bg-surface text-on-surface font-sans overflow-hidden">
+      {/* Hidden File Input for Deck / Document Upload */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+        accept=".txt,.md,.json,.csv,.doc,.docx"
+        className="hidden"
+      />
       {/* SideNavBar */}
       <aside className="hidden md:flex flex-col h-full p-4 border-r border-outline-variant/20 bg-surface w-72 shrink-0 justify-between">
         <div>
@@ -285,21 +390,35 @@ export default function WizardPage() {
                     className="flex-1 p-6 text-base text-on-surface bg-transparent resize-none border-none outline-none focus:ring-0 placeholder:text-on-surface-variant/40"
                     placeholder="Example: I am building a decentralized marketplace for surplus farm produce that connects small-scale organic farmers directly with local restaurants in metropolitan areas. Our goal is to reduce food waste and lower supply chain costs by 30% through predictive demand AI..."
                   />
-                  <div className="p-4 bg-surface-container-low/50 flex justify-between items-center rounded-b-xl border-t border-outline-variant/10">
-                    <div className="flex gap-4">
-                      <button className="text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1 text-xs font-semibold">
-                        <span className="material-symbols-outlined text-sm">attachment</span>
-                        <span>Upload Deck</span>
-                      </button>
-                      <button className="text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1 text-xs font-semibold">
-                        <span className="material-symbols-outlined text-sm">mic</span>
-                        <span>Voice Note</span>
-                      </button>
+                    <div className="p-4 bg-surface-container-low/50 flex justify-between items-center rounded-b-xl border-t border-outline-variant/10">
+                      <div className="flex gap-4 items-center">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded hover:bg-surface-container-high"
+                        >
+                          <span className="material-symbols-outlined text-sm">attachment</span>
+                          <span>Upload Deck / File</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={toggleVoiceRecording}
+                          className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded transition-all ${
+                            isVoiceRecording
+                              ? "bg-red-500/10 text-red-600 border border-red-500/20 animate-pulse"
+                              : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high"
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-sm">
+                            {isVoiceRecording ? "mic_active" : "mic"}
+                          </span>
+                          <span>{isVoiceRecording ? "Listening... (Click to Stop)" : "Voice Note"}</span>
+                        </button>
+                      </div>
+                      <span className="font-mono text-xs text-on-surface-variant">
+                        {ideaWords} words
+                      </span>
                     </div>
-                    <span className="font-mono text-xs text-on-surface-variant">
-                      {ideaWords} words
-                    </span>
-                  </div>
                 </div>
               </div>
 
