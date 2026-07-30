@@ -69,21 +69,25 @@ export default function DashboardPage() {
     scoreBg: "bg-emerald-500/10",
   };
 
-  // Map real database projects if they exist
-  const dbProjects = projects.map((p) => ({
-    id: p.id,
-    name: p.name,
-    description: p.description || "No description provided.",
-    stage: "Idea Stage",
-    score: p.reports?.[0] ? `${p.reports[0].overall_score}/100` : "Analyzing...",
-    status: p.reports?.[0] ? "analyzed" : "pending",
-    time: new Date(p.created_at).toLocaleDateString(),
-    icon: "lightbulb",
-    scoreColor: "text-secondary",
-    scoreBg: "bg-secondary/10",
-  }));
+  // Map real database + localStorage projects
+  const dbProjects = projects.map((p) => {
+    const score = p.reports?.[0]?.overall_score;
+    const isAnalyzed = !!score;
+    return {
+      id: p.id,
+      name: p.name,
+      description: p.description || "No description provided.",
+      stage: score >= 75 ? "Strong Idea" : score >= 55 ? "Promising" : "Early Stage",
+      score: isAnalyzed ? `${score}/100` : "Pending",
+      status: isAnalyzed ? "analyzed" : "pending",
+      time: new Date(p.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+      icon: p.id.startsWith("guest_") ? "rocket_launch" : "lightbulb",
+      scoreColor: score >= 75 ? "text-emerald-600" : score >= 55 ? "text-amber-600" : "text-secondary",
+      scoreBg: score >= 75 ? "bg-emerald-500/10" : score >= 55 ? "bg-amber-500/10" : "bg-secondary/10",
+    };
+  });
 
-  // Always show the demo project first, then real ones
+  // Always show the demo project first, then real/local ones
   const displayedProjects = [demoProject, ...dbProjects];
 
   // KPI calculations
@@ -102,10 +106,24 @@ export default function DashboardPage() {
 
   const handleProjectClick = (projectId: string) => {
     if (projectId === "demo-healthsync-001") {
-      // Load the pre-built demo report into state and save to localStorage
       loadReport(DEMO_REPORT);
       localStorage.setItem("latest_venturelens_report", JSON.stringify(DEMO_REPORT));
       router.push("/report/latest");
+    } else if (projectId.startsWith("guest_")) {
+      // Guest local project: load from localStorage then navigate to /report/latest
+      const rawReport = localStorage.getItem(`venturelens_report_${projectId}`);
+      if (rawReport) {
+        try {
+          const report = JSON.parse(rawReport);
+          loadReport(report);
+          localStorage.setItem("latest_venturelens_report", rawReport);
+          router.push("/report/latest");
+        } catch {
+          router.push("/report/latest");
+        }
+      } else {
+        router.push("/report/latest");
+      }
     } else {
       router.push(`/report/${projectId}`);
     }
