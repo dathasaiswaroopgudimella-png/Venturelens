@@ -1,6 +1,16 @@
 import { OpenAI } from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// Expanded free model pool — rotates on 429/rate-limit, so one slow model never blocks the pipeline
+const OPENROUTER_MODELS_FAST = [
+  "nvidia/nemotron-nano-9b-v2:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "meta-llama/llama-3.2-3b-instruct:free",
+  "microsoft/phi-3-mini-128k-instruct:free",
+  "openai/gpt-oss-20b:free",
+  "qwen/qwen3-8b:free",
+];
+
 export class AIProvider {
   private openrouterKey: string | null = null;
   private nvidiaKey: string | null = null;
@@ -33,25 +43,23 @@ export class AIProvider {
   }
 
   /**
-   * Generates a text or structured JSON completion with multi-provider and multi-model fallback.
+   * Generates a text or structured JSON completion.
+   * Multi-provider with smart model rotation — immediate fallback on 429/errors.
+   * No blocking retries: first working model wins.
    */
   async generateCompletion(
     systemPrompt: string,
     userPrompt: string,
     jsonMode = false
   ): Promise<string> {
-    // 1. Try OpenRouter (Primary - Ultra-reliable & fast)
+    // 1. OpenRouter — try each free model; skip immediately on 429 or empty response
     if (this.openrouterKey) {
-      const openRouterModels = [
-        "google/gemma-4-26b-a4b-it:free",
-        "nvidia/nemotron-nano-9b-v2:free",
-        "openai/gpt-oss-20b:free",
-        "inclusionai/ling-3.0-flash:free",
-      ];
-
-      for (const model of openRouterModels) {
+      for (const model of OPENROUTER_MODELS_FAST) {
         try {
-          console.log(`[AIProvider] Attempting completion via OpenRouter (${model})...`);
+          console.log(`[AIProvider] Attempting OpenRouter (${model})...`);
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 28_000); // 28s hard timeout per model
+
           const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -67,34 +75,46 @@ export class AIProvider {
                 { role: "user", content: userPrompt },
               ],
               response_format: jsonMode ? { type: "json_object" } : undefined,
-              temperature: 0.2,
+              temperature: 0.25,
+              max_tokens: 2048,
             }),
+            signal: controller.signal,
           });
+          clearTimeout(timeout);
+
+          if (res.status === 429 || res.status === 503) {
+            console.warn(`[AIProvider] OpenRouter (${model}) rate-limited (${res.status}), trying next model...`);
+            continue; // Fast-fail to next model
+          }
 
           if (res.ok) {
             const data = await res.json();
             const text = data.choices?.[0]?.message?.content || "";
             if (text && text.trim().length > 10) {
-              console.log(`[AIProvider] OpenRouter (${model}) completion successful.`);
+              console.log(`[AIProvider] OpenRouter (${model}) ✓`);
               return text;
             }
+            console.warn(`[AIProvider] OpenRouter (${model}) returned empty response, trying next...`);
           } else {
             const errData = await res.json().catch(() => ({}));
             console.warn(
-              `[AIProvider] OpenRouter (${model}) returned status ${res.status}:`,
-              errData?.error?.message || res.statusText
+              `[AIProvider] OpenRouter (${model}) error ${res.status}: ${errData?.error?.message || res.statusText}`
             );
           }
         } catch (err: any) {
-          console.warn(`[AIProvider] OpenRouter (${model}) request failed:`, err?.message || err);
+          if (err?.name === "AbortError") {
+            console.warn(`[AIProvider] OpenRouter (${model}) timed out after 28s, trying next...`);
+          } else {
+            console.warn(`[AIProvider] OpenRouter (${model}) failed: ${err?.message || err}`);
+          }
         }
       }
     }
 
-    // 2. Try NVIDIA NIM (Fallback)
+    // 2. NVIDIA NIM (Fallback)
     if (this.openai) {
       try {
-        console.log("[AIProvider] Attempting completion with NVIDIA NIM...");
+        console.log("[AIProvider] Attempting NVIDIA NIM...");
         const response = await this.openai.chat.completions.create({
           model: "nvidia/llama-3.1-nemotron-70b-instruct",
           messages: [
@@ -102,27 +122,26 @@ export class AIProvider {
             { role: "user", content: userPrompt },
           ],
           response_format: jsonMode ? { type: "json_object" } : undefined,
-          temperature: 0.2,
+          temperature: 0.25,
+          max_tokens: 2048,
         });
 
         const text = response.choices[0]?.message?.content || "";
         if (text && text.trim().length > 10) {
-          console.log("[AIProvider] NVIDIA NIM completion successful.");
+          console.log("[AIProvider] NVIDIA NIM ✓");
           return text;
         }
       } catch (err: any) {
-        console.warn(
-          `[AIProvider] NVIDIA NIM failed: ${err?.message || err}. Falling back to Gemini...`
-        );
+        console.warn(`[AIProvider] NVIDIA NIM failed: ${err?.message || err}`);
       }
     }
 
-    // 3. Try Gemini (Fallback)
+    // 3. Google Gemini (Final Fallback)
     if (this.gemini) {
-      const geminiModels = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+      const geminiModels = ["gemini-1.5-flash", "gemini-2.0-flash-lite", "gemini-1.5-pro"];
       for (const modelName of geminiModels) {
         try {
-          console.log(`[AIProvider] Attempting completion with Google Gemini (${modelName})...`);
+          console.log(`[AIProvider] Attempting Google Gemini (${modelName})...`);
           const model = this.gemini.getGenerativeModel({
             model: modelName,
             generationConfig: jsonMode ? { responseMimeType: "application/json" } : undefined,
@@ -131,18 +150,17 @@ export class AIProvider {
           const result = await model.generateContent(`${systemPrompt}\n\nUser Input:\n${userPrompt}`);
           const text = result.response.text();
           if (text && text.trim().length > 10) {
-            console.log(`[AIProvider] Google Gemini (${modelName}) completion successful.`);
+            console.log(`[AIProvider] Google Gemini (${modelName}) ✓`);
             return text;
           }
         } catch (err: any) {
-          console.warn(`[AIProvider] Gemini model ${modelName} failed: ${err?.message || err}`);
+          console.warn(`[AIProvider] Gemini (${modelName}) failed: ${err?.message || err}`);
         }
       }
     }
 
     throw new Error(
-      "No AI provider available or all API calls failed. Please check your OPENROUTER_API_KEY, NVIDIA_API_KEY, or GEMINI_API_KEY."
+      "All AI providers exhausted. Check OPENROUTER_API_KEY, NVIDIA_API_KEY, or GEMINI_API_KEY."
     );
   }
 }
-

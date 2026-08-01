@@ -19,15 +19,36 @@ export default function DashboardPage() {
   const handleDeleteProject = async (id: string) => {
     if (id === "demo-healthsync-001") {
       toast.warning("Protected Sandbox", {
-        description: "The pre-computed sandbox project cannot be deleted.",
+        description: "The demo sandbox project cannot be deleted.",
         duration: 3000,
       });
       return;
     }
+
+    setDeletingId(id);
+
+    // Guest projects are localStorage-only — no server call needed
+    if (id.startsWith("guest_")) {
+      try {
+        localStorage.removeItem(`venturelens_report_${id}`);
+        const rawList = localStorage.getItem("venturelens_projects_list");
+        if (rawList) {
+          const list = JSON.parse(rawList).filter((p: any) => p.id !== id);
+          localStorage.setItem("venturelens_projects_list", JSON.stringify(list));
+        }
+        await fetchProjects();
+        toast.success("Analysis deleted");
+      } catch (err) {
+        toast.error("Could not delete project");
+      } finally {
+        setDeletingId(null);
+      }
+      return;
+    }
+
+    // DB-backed project — call server
     try {
-      const res = await fetch(`/api/projects?id=${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/projects?id=${id}`, { method: "DELETE" });
       if (res.ok) {
         toast.success("Project deleted successfully");
         await fetchProjects();
