@@ -1,6 +1,6 @@
 # VentureLens AI — Venture Capital & Startup Decision Intelligence Platform
 
-[![Next.js 16](https://img.shields.io/badge/Next.js-16.2.10%20(Turbopack)-black.svg?logo=nextdotjs)](https://nextjs.org/)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16.2.12%20(Turbopack)-black.svg?logo=nextdotjs)](https://nextjs.org/)
 [![TypeScript 5](https://img.shields.io/badge/TypeScript-5.0-blue.svg?logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS 4](https://img.shields.io/badge/Tailwind-CSS%204-38B2AC.svg?logo=tailwind-css)](https://tailwindcss.com/)
 [![OpenRouter AI](https://img.shields.io/badge/OpenRouter-AI%20Engine-purple.svg)](https://openrouter.ai/)
@@ -8,6 +8,30 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **VentureLens AI** is a state-of-the-art automated venture capital decision intelligence platform designed for startup founders, venture capitalists, angel investors, and incubators. It combines deterministic heuristic rule engines with multi-provider neural reasoning to perform rigorous, non-generic evaluations of early-stage venture ideas.
+
+---
+
+## ⚙️ Environment & System Requirements
+
+| Parameter | Requirement / Version |
+|---|---|
+| **Node.js** | `>= 20.9.0` (LTS recommended) |
+| **npm** | `>= 10.0.0` |
+| **Framework** | Next.js `16.2.12` (Turbopack Enabled) |
+| **Language** | TypeScript `5.x` (Strict Type Safety) |
+| **Deployment Target** | Vercel, Netlify, AWS Amplify, Docker, or Localhost |
+
+### 🚀 Execution Modes (Zero-Config vs Full AI Production)
+
+VentureLens AI is built to run out-of-the-box on any system:
+
+| Capabilities | Zero-Config Mode (No `.env.local`) | Full AI Production Mode (With `.env.local`) |
+|---|---|---|
+| **Demo Pitch Evaluation** | ✅ Supported (Pre-built & Rule Engine) | ✅ Full Multi-Model AI Reasoning |
+| **Pitch Deck Document Parser** | ⚠️ Fallback Text Extraction | ✅ Multimodal PDF/DOCX AI Parsing |
+| **Interactive Voice Pitch Note** | ✅ Native Browser MediaRecorder | ✅ AI Speech Formatting & Structuring |
+| **Market Intelligence** | ⚠️ Rule-based Competitor Matrix | ✅ Live OpenRouter AI Market Search |
+| **Data Persistence** | ✅ Client LocalStorage | ✅ Supabase PostgreSQL RLS |
 
 ---
 
@@ -91,7 +115,7 @@ cd Venturelens
 npm install
 ```
 
-### 2. Configure Environment Variables
+### 2. Configure Environment Variables (Optional)
 
 Create `.env.local` based on `.env.example`:
 
