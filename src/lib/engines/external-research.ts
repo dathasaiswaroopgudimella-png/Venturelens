@@ -1,5 +1,6 @@
 import { ExtractedFacts, QuestionnaireAnswers } from "@/types";
 import { AIProvider } from "./ai-provider";
+import { safeJsonParse } from "@/lib/utils/json-repair";
 
 export interface ResearchResult {
   competitorsFound: string[];
@@ -44,8 +45,7 @@ Revenue Model: ${revModel}
 Founder Claimed Competitors: ${answers.competitors || "None listed"}`;
 
       const responseText = await this.aiProvider.generateCompletion(systemPrompt, userPrompt, true);
-      const cleaned = responseText.replace(/```json/i, "").replace(/```/g, "").trim();
-      const parsed = JSON.parse(cleaned);
+      const parsed = safeJsonParse<any>(responseText, null);
 
       if (parsed && Array.isArray(parsed.competitorsFound) && parsed.competitorsFound.length > 0) {
         console.log(`[ExternalResearch] OpenRouter Market Research successful. Found ${parsed.competitorsFound.length} competitors.`);

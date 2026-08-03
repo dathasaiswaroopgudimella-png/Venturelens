@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { AIProvider } from "@/lib/engines/ai-provider";
 import { QuestionnaireAnswers } from "@/types";
+import { safeJsonParse } from "@/lib/utils/json-repair";
 
 export async function POST(req: Request) {
   try {
@@ -69,8 +70,11 @@ Output ONLY valid JSON without markdown wrappers.`;
     const userPrompt = `Spoken Voice Transcript:\n"${textToProcess}"`;
 
     const responseText = await aiProvider.generateCompletion(systemPrompt, userPrompt, true);
-    const cleaned = responseText.replace(/```json/i, "").replace(/```/g, "").trim();
-    const parsedData = JSON.parse(cleaned);
+    const parsedData = safeJsonParse<any>(responseText, {
+      formattedPitch: textToProcess,
+      targetCustomer: "Spoken Target Segment",
+      problemSolved: textToProcess,
+    });
 
     return NextResponse.json({
       success: true,

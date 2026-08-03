@@ -1,5 +1,6 @@
 import { AIProvider } from "./ai-provider";
 import { QuestionnaireAnswers, ExtractedFacts } from "@/types";
+import { safeJsonParse } from "@/lib/utils/json-repair";
 
 export class StructuredExtractor {
   private aiProvider: AIProvider;
@@ -175,13 +176,13 @@ Output ONLY a valid JSON object matching the following structure:
     "buyingBehavior": "Description of buying behavior or decision making"
   },
   "market": {
-    "industryTags": ["tag1", "tag2", ...],
+    "industryTags": ["tag1", "tag2"],
     "geography": "Target geographic markets",
-    "adoptionBarriers": ["barrier1", "barrier2", ...],
+    "adoptionBarriers": ["barrier1", "barrier2"],
     "tamPotential": "Small" | "Medium" | "Large" | "Massive"
   },
   "competition": {
-    "competitorList": ["competitor1", "competitor2", ...],
+    "competitorList": ["competitor1", "competitor2"],
     "differentiationMoat": "Summary of differentiation or defensibility",
     "marketPositioning": "How the startup positions itself vs alternatives"
   },
@@ -199,7 +200,6 @@ Output ONLY a valid JSON object matching the following structure:
 }
 `;
 
-    // Simple sanitization helper to strip potentially dangerous characters or tags
     const sanitize = (text: string | undefined): string => {
       if (!text) return "";
       return text.replace(/<\/?[^>]+(>|$)/g, "").trim();
@@ -230,8 +230,7 @@ ${answers.tamEstimate ? `- TAM Estimate: ${sanitize(answers.tamEstimate)}` : ""}
         userPrompt,
         true
       );
-      const cleaned = responseText.replace(/```json/i, "").replace(/```/g, "").trim();
-      const parsed = JSON.parse(cleaned);
+      const parsed = safeJsonParse<any>(responseText, null);
       return this.validateExtractedFacts(parsed, answers);
     } catch (error) {
       console.error("[StructuredExtractor] Failed to extract facts, using fallback parser:", error);
@@ -239,4 +238,3 @@ ${answers.tamEstimate ? `- TAM Estimate: ${sanitize(answers.tamEstimate)}` : ""}
     }
   }
 }
-

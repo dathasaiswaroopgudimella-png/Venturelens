@@ -1,4 +1,5 @@
 import { AIProvider } from "./ai-provider";
+import { safeJsonParse } from "@/lib/utils/json-repair";
 import {
   ExtractedFacts,
   RuleOutcome,
@@ -258,8 +259,7 @@ External Research findings: ${searchEvidenceText}`;
     try {
       console.log("[AIExplainer] Running unified combined AI strategic analysis & cross-verification...");
       const responseText = await this.aiProvider.generateCompletion(systemPrompt, userPrompt, true);
-      const cleaned = responseText.replace(/```json/i, "").replace(/```/g, "").trim();
-      const raw = JSON.parse(cleaned);
+      const raw = safeJsonParse<any>(responseText, {});
 
       const aiAnalysis = this.validateAnalysis(raw.analysis || raw, facts, answers);
       const crossVerification = this.validateCrossVerify(raw.crossVerification || raw, scores.overallScore, facts, answers);
