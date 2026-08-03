@@ -17,7 +17,7 @@ import { nanoid } from "nanoid";
 // Simple in-memory sliding-window rate limiting map
 const ipCache = new Map<string, number[]>();
 const LIMIT_WINDOW = 60000; // 1 minute
-const MAX_REQUESTS = 5; // Max 5 analysis requests per minute per IP
+const MAX_REQUESTS = 10; // Max 10 analysis requests per minute per IP
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -32,6 +32,7 @@ function checkRateLimit(ip: string): boolean {
 }
 
 export async function POST(req: Request) {
+  const startTime = Date.now();
   try {
     const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "127.0.0.1";
     if (checkRateLimit(ip)) {
@@ -50,32 +51,29 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("[API/Analyze] Starting VentureLens Decision Pipeline...");
+    console.log("[API/Analyze] Starting Parallelized VentureLens Pipeline...");
 
-    // 1. Initialize AI Provider
+    // 1. Initialize Engines
     const aiProvider = new AIProvider();
-
-    // 2. Structured Extraction Engine
     const extractor = new StructuredExtractor(aiProvider);
-    const facts = await extractor.extract(answers);
+    const research = new ExternalResearch();
 
-    // 3. Knowledge Graph Builder
+    // 2. PARALLEL PHASE 1: Run Fact Extraction & Market Research concurrently!
+    const [facts, researchResult] = await Promise.all([
+      extractor.extract(answers),
+      research.performResearch(answers),
+    ]);
+
+    // 3. Fast Synchronous Deterministic Engines
     const graphBuilder = new KnowledgeGraphBuilder();
     const graph = graphBuilder.build(facts);
 
-    // 4. External Research Layer (Tavily)
-    const research = new ExternalResearch();
-    const researchResult = await research.performResearch(facts, answers);
-
-    // 5. Deterministic Rule Engine
     const ruleEngine = new RuleEngine();
     const ruleOutcomes = ruleEngine.evaluate(facts, answers);
 
-    // 6. Heuristic Scoring Engine
     const scoringEngine = new ScoringEngine();
     const scores = scoringEngine.calculate(facts, ruleOutcomes, answers);
 
-    // 7. Evidence Engine
     const evidenceEngine = new EvidenceEngine();
     const evidence = evidenceEngine.evaluate(
       facts,
@@ -83,7 +81,6 @@ export async function POST(req: Request) {
       researchResult.competitorsFound.length
     );
 
-    // 8. Consistency Engine
     const consistencyEngine = new ConsistencyEngine();
     const consistency = consistencyEngine.evaluate(
       facts,
@@ -91,29 +88,18 @@ export async function POST(req: Request) {
       researchResult.competitorsFound
     );
 
-    // 9. Recommendation Engine
     const recommendationEngine = new RecommendationEngine();
     const recommendations = recommendationEngine.generate(facts, ruleOutcomes, scores);
 
-    // 10 & 11. Run AI Strategic Analysis & AI Cross-Verification Layer concurrently
+    // 4. PARALLEL PHASE 2: Single-Pass Combined AI Strategic Analysis & Cross-Verification
     const explainer = new AIExplainer(aiProvider);
-    const [aiAnalysis, crossVerification] = await Promise.all([
-      explainer.generateAnalysis(
-        facts,
-        ruleOutcomes,
-        scores,
-        answers,
-        researchResult.evidenceText
-      ),
-      explainer.crossVerify(
-        facts,
-        ruleOutcomes,
-        scores,
-        answers,
-        researchResult.evidenceText
-      )
-    ]);
-
+    const { aiAnalysis, crossVerification } = await explainer.generateCombinedReport(
+      facts,
+      ruleOutcomes,
+      scores,
+      answers,
+      researchResult.evidenceText
+    );
 
     // Compile the final Unified Venture Intelligence Report
     const guestProjectId = `guest_${nanoid(10)}`;
@@ -132,14 +118,13 @@ export async function POST(req: Request) {
       createdAt: new Date().toISOString(),
     };
 
-    // 12. Persist to Supabase if authenticated
+    // 5. Persist to Supabase if authenticated
     try {
       const cookieStore = await cookies();
       const supabase = createClient(cookieStore);
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
-        // Create project first
         const { data: project, error: pError } = await supabase
           .from("projects")
           .insert({
@@ -156,14 +141,12 @@ export async function POST(req: Request) {
         if (project) {
           report.projectId = project.id;
 
-          // Save questionnaire
           const { error: qError } = await supabase.from("questionnaires").insert({
             project_id: project.id,
             answers: answers,
           });
           if (qError) throw qError;
 
-          // Save report
           const { data: savedReport, error: rError } = await supabase
             .from("reports")
             .insert({
@@ -189,10 +172,10 @@ export async function POST(req: Request) {
       console.warn("[API/Analyze] Database persistence skipped or failed:", dbError);
     }
 
-    console.log("[API/Analyze] VentureLens Pipeline execution completed successfully.");
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`[API/Analyze] Pipeline completed in ${duration}s.`);
     return NextResponse.json(report, {
       headers: {
-        // Prevent response from being cached — each analysis is unique
         "Cache-Control": "no-store",
       },
     });

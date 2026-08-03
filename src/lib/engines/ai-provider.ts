@@ -1,7 +1,7 @@
 import { OpenAI } from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Expanded free model pool — rotates on 429/rate-limit, so one slow model never blocks the pipeline
+// Fast free model pool — rotates on 429/rate-limit or >12s latency
 const OPENROUTER_MODELS_FAST = [
   "nvidia/nemotron-nano-9b-v2:free",
   "google/gemma-4-26b-a4b-it:free",
@@ -44,21 +44,21 @@ export class AIProvider {
 
   /**
    * Generates a text or structured JSON completion.
-   * Multi-provider with smart model rotation — immediate fallback on 429/errors.
-   * No blocking retries: first working model wins.
+   * Multi-provider with smart fast model rotation — 12s per-model threshold.
+   * No blocking retries: first working fast model wins.
    */
   async generateCompletion(
     systemPrompt: string,
     userPrompt: string,
     jsonMode = false
   ): Promise<string> {
-    // 1. OpenRouter — try each free model; skip immediately on 429 or empty response
+    // 1. OpenRouter — try each free model; skip on 429, error, or >12s delay
     if (this.openrouterKey) {
       for (const model of OPENROUTER_MODELS_FAST) {
         try {
           console.log(`[AIProvider] Attempting OpenRouter (${model})...`);
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 28_000); // 28s hard timeout per model
+          const timeout = setTimeout(() => controller.abort(), 12_000); // 12s aggressive threshold for high speed
 
           const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
@@ -76,7 +76,7 @@ export class AIProvider {
               ],
               response_format: jsonMode ? { type: "json_object" } : undefined,
               temperature: 0.25,
-              max_tokens: 2048,
+              max_tokens: 1800,
             }),
             signal: controller.signal,
           });
@@ -84,7 +84,7 @@ export class AIProvider {
 
           if (res.status === 429 || res.status === 503) {
             console.warn(`[AIProvider] OpenRouter (${model}) rate-limited (${res.status}), trying next model...`);
-            continue; // Fast-fail to next model
+            continue;
           }
 
           if (res.ok) {
@@ -103,7 +103,7 @@ export class AIProvider {
           }
         } catch (err: any) {
           if (err?.name === "AbortError") {
-            console.warn(`[AIProvider] OpenRouter (${model}) timed out after 28s, trying next...`);
+            console.warn(`[AIProvider] OpenRouter (${model}) timed out (>12s), switching to next model...`);
           } else {
             console.warn(`[AIProvider] OpenRouter (${model}) failed: ${err?.message || err}`);
           }
@@ -123,7 +123,7 @@ export class AIProvider {
           ],
           response_format: jsonMode ? { type: "json_object" } : undefined,
           temperature: 0.25,
-          max_tokens: 2048,
+          max_tokens: 1800,
         });
 
         const text = response.choices[0]?.message?.content || "";

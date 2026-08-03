@@ -15,13 +15,14 @@ export class ExternalResearch {
   }
 
   async performResearch(
-    facts: ExtractedFacts,
-    answers: QuestionnaireAnswers
+    answers: QuestionnaireAnswers,
+    facts?: ExtractedFacts
   ): Promise<ResearchResult> {
     const idea = answers.idea || "";
-    const icp = facts.customer.icp || answers.targetCustomer || "target market";
-    const tag0 = facts.market.industryTags[0] || "Target Sector";
-    const geo = facts.market.geography || answers.geography || "Global";
+    const icp = facts?.customer?.icp || answers.targetCustomer || "target market";
+    const tag0 = facts?.market?.industryTags?.[0] || "Target Sector";
+    const geo = facts?.market?.geography || answers.geography || "Global";
+    const revModel = facts?.businessModel?.primaryType || answers.revenueModel || "SaaS";
 
     // 1. Try OpenRouter AI Market Research Intelligence (Primary - Fast & Deep)
     try {
@@ -37,9 +38,9 @@ Return a valid JSON object matching the following structure (no markdown wrapper
 
       const userPrompt = `Startup Idea: ${idea}
 Target Customer (ICP): ${icp}
-Industry Sector: ${tag0} (${facts.market.industryTags.join(", ")})
+Industry Sector: ${tag0}
 Geography: ${geo}
-Revenue Model: ${facts.businessModel.primaryType}
+Revenue Model: ${revModel}
 Founder Claimed Competitors: ${answers.competitors || "None listed"}`;
 
       const responseText = await this.aiProvider.generateCompletion(systemPrompt, userPrompt, true);
@@ -61,7 +62,7 @@ Founder Claimed Competitors: ${answers.competitors || "None listed"}`;
     // 2. Fallback to Tavily if configured
     const apiKey = process.env.TAVILY_API_KEY;
     if (apiKey) {
-      const query = `top competitors for ${facts.businessModel.primaryType} startup in ${facts.market.industryTags.join(" ")} targeting ${facts.customer.icp}`;
+      const query = `top competitors for ${revModel} startup in ${tag0} targeting ${icp}`;
       try {
         console.log(`[ExternalResearch] Querying Tavily with: "${query}"`);
         const response = await fetch("https://api.tavily.com/search", {
