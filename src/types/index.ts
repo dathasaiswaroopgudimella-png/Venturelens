@@ -160,6 +160,45 @@ export interface AICrossVerification {
   recommendedValidationSteps: string[];
 }
 
+export interface KnowledgeSnippet {
+  id: string;
+  category: "VC_Framework" | "Startup_Case_Study" | "GTM_Strategy" | "Market_Sizing" | "IIT_ECell_Resource" | "Fail_Pattern";
+  title: string;
+  content: string;
+  tags: string[];
+  relevanceScore?: number;
+}
+
+export interface DecisionExperiment {
+  verdict: "CONTINUE" | "PIVOT" | "STOP";
+  strategicReasoning: string;
+  primaryRiskFactor: string;
+  recommendedExperiment: string;
+  validationMilestones: string[];
+}
+
+export interface BenchmarkDatasetItem {
+  id: string;
+  startupIdea: string;
+  industry: string;
+  evidenceData: {
+    interviewsCount: number;
+    surveyResponsesCount: number;
+    repeatUsersCount: number;
+    payingCustomersCount: number;
+  };
+  scores: {
+    demand: number;
+    retention: number;
+    market: number;
+    competition: number;
+  };
+  decision: "CONTINUE" | "PIVOT" | "STOP";
+  reasoning: string;
+  recommendedExperiment: string;
+  sixMonthOutcome?: string;
+}
+
 export interface UnifiedVentureReport {
   id?: string;
   projectId: string;
@@ -173,5 +212,7 @@ export interface UnifiedVentureReport {
   recommendations: Recommendation[];
   aiAnalysis: AIAnalysis;
   crossVerification: AICrossVerification;
+  retrievedKnowledge?: KnowledgeSnippet[];
+  decisionExperiment?: DecisionExperiment;
   createdAt: string;
 }
