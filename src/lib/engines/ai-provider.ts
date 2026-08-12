@@ -45,6 +45,7 @@ export class AIProvider {
   /**
    * Generates a text or structured JSON completion.
    * Multi-provider with smart fast model rotation — 12s per-model threshold.
+   * No blocking retries: first working fast model wins.
    */
   async generateCompletion(
     systemPrompt: string,
@@ -57,7 +58,7 @@ export class AIProvider {
         try {
           console.log(`[AIProvider] Attempting OpenRouter (${model})...`);
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 12_000);
+          const timeout = setTimeout(() => controller.abort(), 12_000); // 12s aggressive threshold for high speed
 
           const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
@@ -93,9 +94,19 @@ export class AIProvider {
               console.log(`[AIProvider] OpenRouter (${model}) ✓`);
               return text;
             }
+            console.warn(`[AIProvider] OpenRouter (${model}) returned empty response, trying next...`);
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            console.warn(
+              `[AIProvider] OpenRouter (${model}) error ${res.status}: ${errData?.error?.message || res.statusText}`
+            );
           }
         } catch (err: any) {
-          console.warn(`[AIProvider] OpenRouter (${model}) failed: ${err?.message || err}`);
+          if (err?.name === "AbortError") {
+            console.warn(`[AIProvider] OpenRouter (${model}) timed out (>12s), switching to next model...`);
+          } else {
+            console.warn(`[AIProvider] OpenRouter (${model}) failed: ${err?.message || err}`);
+          }
         }
       }
     }
@@ -148,6 +159,8 @@ export class AIProvider {
       }
     }
 
-    throw new Error("All AI providers exhausted. Check OPENROUTER_API_KEY, NVIDIA_API_KEY, or GEMINI_API_KEY.");
+    throw new Error(
+      "All AI providers exhausted. Check OPENROUTER_API_KEY, NVIDIA_API_KEY, or GEMINI_API_KEY."
+    );
   }
 }
