@@ -2,6 +2,9 @@ import { create } from "zustand";
 import { QuestionnaireAnswers, UnifiedVentureReport } from "@/types";
 import { generateClientVentureReport } from "@/lib/engines/client-evaluator";
 
+// Bump this whenever the scoring engine changes to bust stale cached reports.
+const CACHE_VERSION = "v3";
+
 interface VentureStore {
   answers: QuestionnaireAnswers;
   isAnalyzing: boolean;
@@ -82,8 +85,9 @@ export const useVentureStore = create<VentureStore>((set, get) => ({
     // Save report and project to localStorage so guest users can re-open their projects
     if (typeof window !== "undefined") {
       try {
-        localStorage.setItem("latest_venturelens_report", JSON.stringify(report));
-        localStorage.setItem(`venturelens_report_${report.projectId}`, JSON.stringify(report));
+        const stamped = { ...report, engineVersion: CACHE_VERSION };
+        localStorage.setItem("latest_venturelens_report", JSON.stringify(stamped));
+        localStorage.setItem(`venturelens_report_${report.projectId}`, JSON.stringify(stamped));
 
         const localProj = {
           id: report.projectId,
@@ -153,22 +157,33 @@ export const useVentureStore = create<VentureStore>((set, get) => ({
   },
 
   fetchReportById: async (id) => {
-    // Check localStorage first
+    // Check localStorage first — but only if the report was generated with current engine version
     if (typeof window !== "undefined") {
       try {
         if (id === "latest") {
           const rawLatest = localStorage.getItem("latest_venturelens_report");
           if (rawLatest) {
-            const report: UnifiedVentureReport = JSON.parse(rawLatest);
-            set({ currentReport: report });
-            return report;
+            const parsed = JSON.parse(rawLatest);
+            // Bust stale cached reports from old scoring engine versions
+            if (parsed?.engineVersion === CACHE_VERSION) {
+              set({ currentReport: parsed });
+              return parsed as UnifiedVentureReport;
+            } else {
+              console.warn("[VentureStore] Stale engine cache detected — discarding old report.");
+              localStorage.removeItem("latest_venturelens_report");
+            }
           }
         }
         const rawLocal = localStorage.getItem(`venturelens_report_${id}`);
         if (rawLocal) {
-          const report: UnifiedVentureReport = JSON.parse(rawLocal);
-          set({ currentReport: report });
-          return report;
+          const parsed = JSON.parse(rawLocal);
+          if (parsed?.engineVersion === CACHE_VERSION) {
+            set({ currentReport: parsed });
+            return parsed as UnifiedVentureReport;
+          } else {
+            console.warn("[VentureStore] Stale engine cache detected — discarding old report.");
+            localStorage.removeItem(`venturelens_report_${id}`);
+          }
         }
       } catch (e) {
         console.warn("[VentureStore] LocalStorage report load error:", e);

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { CacheBuster } from "@/components/CacheBuster";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -57,6 +58,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-surface text-on-surface antialiased">
+        <CacheBuster />
         {children}
         <Toaster position="bottom-right" richColors />
       </body>

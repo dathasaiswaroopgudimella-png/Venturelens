@@ -47,7 +47,7 @@ export function generateClientVentureReport(answers: QuestionnaireAnswers): Unif
   const consistency = consistencyEngine.evaluate(facts, answers);
 
   const recommendationEngine = new RecommendationEngine();
-  const recommendations = recommendationEngine.generate(facts, ruleOutcomes, scores);
+  const recommendations = recommendationEngine.generate(facts, ruleOutcomes, scores, answers);
 
   const decisionEngine = new DecisionEngine();
   const decisionExperiment = decisionEngine.evaluate(facts, ruleOutcomes, scores, answers);

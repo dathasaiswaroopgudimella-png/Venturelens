@@ -1,11 +1,12 @@
-import { ExtractedFacts, RuleOutcome, VentureScores, Recommendation } from "@/types";
+import { ExtractedFacts, RuleOutcome, VentureScores, Recommendation, QuestionnaireAnswers } from "@/types";
 import { isNonCommercialSubmission, formatBuyerPersona, formatGeography } from "@/lib/utils/clean-inputs";
 
 export class RecommendationEngine {
   generate(
     facts: ExtractedFacts,
     ruleOutcomes: RuleOutcome[],
-    scores: VentureScores
+    scores: VentureScores,
+    answers?: QuestionnaireAnswers
   ): Recommendation[] {
     const recommendations: Recommendation[] = [];
     let recIdCounter = 1;
@@ -33,8 +34,12 @@ export class RecommendationEngine {
       });
     };
 
-    // 0. Non-Commercial / Nonsense Thesis Branch
-    if (scores.overallScore < 20) {
+    // 0. Non-Commercial / Nonsense Thesis Branch — use actual isNonCommercial check
+    const nonCommercial = answers
+      ? isNonCommercialSubmission(answers.idea, answers)
+      : scores.overallScore < 20;
+
+    if (nonCommercial || scores.overallScore < 20) {
       addRec(
         "Critical",
         "Formulate an Addressable Problem Statement",
