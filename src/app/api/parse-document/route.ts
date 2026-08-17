@@ -62,14 +62,39 @@ async function extractPptxText(buffer: Buffer): Promise<string> {
 
 async function extractPdfText(buffer: Buffer): Promise<string> {
   try {
-    const pdfParse = require("pdf-parse");
-    const parsedPdf = await pdfParse(buffer);
-    if (parsedPdf.text && parsedPdf.text.trim().length > 10) {
-      return parsedPdf.text.trim();
+    const pdfLib = require("pdf-parse");
+    if (typeof pdfLib === "function") {
+      const data = await pdfLib(buffer);
+      if (data?.text && data.text.trim().length > 10) {
+        return data.text.trim();
+      }
+    } else if (pdfLib?.PDFParse) {
+      const parser = new pdfLib.PDFParse({ data: buffer });
+      const result = await parser.getText();
+      try { await parser.destroy(); } catch (e) {}
+      if (typeof result === "string" && result.trim().length > 10) {
+        return result.trim();
+      }
+      if (result?.text && typeof result.text === "string" && result.text.trim().length > 10) {
+        return result.text.trim();
+      }
     }
   } catch (e) {
     console.warn("[ParseDocument] pdf-parse error:", e);
   }
+
+  // Fallback text extraction from raw PDF byte streams
+  try {
+    const raw = buffer.toString("utf-8");
+    const textMatches = raw.match(/\(([^()]+)\)\s*Tj/g) || raw.match(/\[([^\[\]]+)\]\s*TJ/g);
+    if (textMatches && textMatches.length > 5) {
+      return textMatches
+        .map((m) => m.replace(/[\(\)\[\]]|Tj|TJ/g, "").trim())
+        .filter(Boolean)
+        .join(" ");
+    }
+  } catch (e) {}
+
   return "";
 }
 
@@ -92,12 +117,12 @@ function getSmartDocumentSample(fullText: string): string {
     .replace(/[\r\n]{3,}/g, "\n\n")
     .trim();
 
-  if (cleaned.length <= 10000) return cleaned;
+  if (cleaned.length <= 12000) return cleaned;
 
-  const beginning = cleaned.slice(0, 5000);
+  const beginning = cleaned.slice(0, 6000);
   const midPoint = Math.floor(cleaned.length / 2);
-  const middle = cleaned.slice(midPoint - 1500, midPoint + 1500);
-  const end = cleaned.slice(-2000);
+  const middle = cleaned.slice(midPoint - 2000, midPoint + 2000);
+  const end = cleaned.slice(-2500);
 
   return `${beginning}\n\n--- [MIDDLE SECTION SAMPLE] ---\n${middle}\n\n--- [FINAL SECTION SAMPLE] ---\n${end}`;
 }
@@ -121,7 +146,6 @@ export async function POST(req: Request) {
       if (fileName.endsWith(".pptx") || fileName.endsWith(".ppt")) {
         documentText = await extractPptxText(buffer);
         if (!documentText) {
-          // Fallback text extraction
           documentText = buffer.toString("utf-8").replace(/[^\x20-\x7E\n\r\t]/g, " ").replace(/\s+/g, " ");
         }
       } else if (fileName.endsWith(".pdf")) {
@@ -138,13 +162,13 @@ export async function POST(req: Request) {
 
     if (!documentText || documentText.trim().length < 15) {
       return NextResponse.json(
-        { error: "Could not extract readable text from the uploaded document. Please check the file format." },
+        { error: "Could not extract readable text from the uploaded document. Please upload a standard PDF, PPTX, or DOCX file." },
         { status: 400 }
       );
     }
 
     const sampledText = getSmartDocumentSample(documentText);
-    console.log(`[API/ParseDocument] Extracted ${documentText.length} characters. Sending to AI extractor...`);
+    console.log(`[API/ParseDocument] Extracted ${documentText.length} characters. Processing with OpenRouter...`);
 
     const aiProvider = new AIProvider();
     const systemPrompt = `You are a Principal Venture Capital Diligence Analyst specializing in pitch deck evaluation.
@@ -189,7 +213,7 @@ Output ONLY a JSON object matching this schema:
       tamEstimate: rawParsed.tamEstimate || "Large TAM",
     };
 
-    console.log("[API/ParseDocument] Pitch deck parsed successfully with AI.");
+    console.log("[API/ParseDocument] Pitch deck parsed successfully with OpenRouter AI.");
     return NextResponse.json({
       success: true,
       extractedWords: documentText.split(/\s+/).length,
