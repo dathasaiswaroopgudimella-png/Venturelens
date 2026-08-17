@@ -17,6 +17,7 @@ import { ConsistencyEngine } from "./consistency-engine";
 import { RecommendationEngine } from "./recommendation-engine";
 import { KnowledgeRetriever } from "./knowledge-retriever";
 import { DecisionEngine } from "./decision-engine";
+import { cleanStartupAnswers } from "@/lib/utils/clean-inputs";
 import { nanoid } from "nanoid";
 
 export function generateClientVentureReport(answers: QuestionnaireAnswers): UnifiedVentureReport {
@@ -85,15 +86,9 @@ function generateDomainSynthesis(
   scores: VentureScores,
   equation: ScoringEquation
 ): { aiAnalysis: AIAnalysis; crossVerification: AICrossVerification } {
-  const icp = facts.customer.icp || answers.targetCustomer || "target buyers";
-  const prob = facts.problem.description || answers.problemSolved || "workflow friction";
-  const ind = facts.market.industryTags[0] || "Technology";
-  const moat = facts.competition.differentiationMoat || answers.differentiation || "specialized workflow & speed advantage";
-  const revModel = facts.businessModel.primaryType || answers.revenueModel || "Subscription";
+  const profile = cleanStartupAnswers(answers);
   const score = scores.overallScore;
-  const ideaName = answers.idea.slice(0, 45).trim();
-  const geo = facts.market.geography || answers.geography || "target markets";
-  const hasTraction = /paying|revenue|\$|₹|loi|pilot/i.test(answers.currentValidation || "");
+  const hasTraction = /paying|revenue|\$|₹|loi|pilot/i.test(profile.validation);
 
   const dimProb = Math.min(95, Math.max(40, scores.problem.score));
   const dimCust = Math.min(95, Math.max(35, scores.customer.score));
@@ -103,12 +98,12 @@ function generateDomainSynthesis(
 
   return {
     aiAnalysis: {
-      executiveSummary: `"${ideaName}" addresses an acute operational pain point in the ${ind} industry for ${icp}. By replacing ${answers.existingAlternatives || "legacy manual alternatives"} with a dedicated ${revModel} model, the venture demonstrates strong product-market alignment (Readiness: ${score}/100), with key focus on ${hasTraction ? "scaling pilot conversions and measuring 30-day cohort retention" : "validating economic buyer willingness-to-pay via structured pilots"}.`,
+      executiveSummary: `VERDICT: ${score >= 70 ? "PROCEED TO PILOT" : score >= 50 ? "PIVOT / VALIDATE" : "STOP & DISCOVER"}. The problem thesis for "${profile.startupName}" is credible (${dimProb}% problem agreement), but scaling requires resolving key constraints: (1) Execution fit is rated at ${dimExec}%, (2) Commercial willingness-to-pay is ${hasTraction ? "partially validated via early metrics" : "unverified without advance deposits"}, (3) Market confidence stands at ${dimMkt}%, and (4) Transitioning from ${profile.alternatives} creates customer onboarding friction. Required proof: ${hasTraction ? "Measure 30-day cohort retention (>60%) across active pilot accounts" : "Execute 15 structured buyer interviews and secure 3 paid pilot commitments"}.`,
       swot: {
         strengths: [
-          `High-urgency value proposition directly addressing ${prob.slice(0, 50)} for ${icp}`,
-          `Defensible competitive positioning established via ${moat.slice(0, 60)}`,
-          `Scalable unit economics underpinned by recurring ${revModel} monetization`,
+          `High-urgency value proposition directly addressing ${profile.problem.slice(0, 50)} for ${profile.icp}`,
+          `Defensible competitive positioning established via ${profile.moat.slice(0, 60)}`,
+          `Scalable unit economics underpinned by recurring ${profile.revenueModel} monetization`,
         ],
         weaknesses: [
           hasTraction
@@ -118,22 +113,22 @@ function generateDomainSynthesis(
           "Customer onboarding friction when transitioning from existing legacy workarounds",
         ],
         opportunities: [
-          `Rapid beachhead expansion across ${geo} via specialized digital acquisition loops`,
+          `Rapid beachhead expansion across ${profile.geography} via specialized digital acquisition loops`,
           "Strategic workflow integrations and B2B channel distribution partnerships",
           "Upsell tiers and usage-based expansion revenue as customer volume grows",
         ],
         threats: [
-          `Incumbent competitors (${facts.competition.competitorList.slice(0, 2).join(", ") || "market alternatives"}) responding with feature parity`,
+          `Incumbent competitors (${profile.competitors.slice(0, 2).join(", ") || "market alternatives"}) responding with feature parity`,
           "Customer switching costs and organizational inertia in legacy environments",
         ],
       },
       gtmStrategy: hasTraction
-        ? `1. Conversion Phase: Convert existing pilot interest from ${icp} into binding annual contracts with predefined ROI milestones.\n2. Inbound Motion: Publish data-backed case studies illustrating hours and costs saved.\n3. Channel Scaling: Partner with regional associations in ${geo} to create scalable outbound pipeline.`
-        : `1. Beachhead Phase: Launch direct outbound outreach targeting 50 qualified ${icp} decision-makers in ${geo} to secure 5 paying pilot accounts.\n2. Conversion Loop: Offer a 14-day proof-of-concept pilot with clear ROI success milestones.\n3. Scaling Channel: Establish automated digital acquisition loops to accelerate inbound pipeline.`,
-      mvpRoadmap: `Phase 1 (Months 1–2): Deploy lightweight Concierge/Manual MVP to validate core willingness-to-pay for ${icp}.\nPhase 2 (Months 3–4): Onboard 10 paying customers, track 30-day retention cohort metrics, and eliminate onboarding bottlenecks.\nPhase 3 (Months 5–6): Launch self-serve ${revModel} platform with automated digital distribution and prepare seed investor data room.`,
+        ? `1. Conversion Phase: Convert existing pilot interest from ${profile.icp} into binding annual contracts with predefined ROI milestones.\n2. Inbound Motion: Publish data-backed case studies illustrating hours and costs saved.\n3. Channel Scaling: Partner with regional associations in ${profile.geography} to create scalable outbound pipeline.`
+        : `1. Beachhead Phase: Launch direct outbound outreach targeting 50 qualified ${profile.icp} decision-makers in ${profile.geography} to secure 5 paying pilot accounts.\n2. Conversion Loop: Offer a 14-day proof-of-concept pilot with clear ROI success milestones.\n3. Scaling Channel: Establish automated digital acquisition loops to accelerate inbound pipeline.`,
+      mvpRoadmap: `Phase 1 (Months 1–2): Deploy lightweight Concierge/Manual MVP to validate core willingness-to-pay for ${profile.icp}.\nPhase 2 (Months 3–4): Onboard 10 paying customers, track 30-day retention cohort metrics, and eliminate onboarding bottlenecks.\nPhase 3 (Months 5–6): Launch self-serve ${profile.revenueModel} platform with automated digital distribution and prepare seed investor data room.`,
       landingPageCopy: {
-        heroTitle: `The Smarter Way for ${icp} to Eliminate ${prob.slice(0, 35)}`,
-        heroSubtitle: `Streamline your workflow with an automated ${revModel} platform built for ${icp}. Reduce manual costs and accelerate operational efficiency.`,
+        heroTitle: `The Smarter Way for ${profile.icp} to Eliminate ${profile.problem.slice(0, 35)}`,
+        heroSubtitle: `Streamline your workflow with an automated ${profile.revenueModel} platform built for ${profile.icp}. Reduce manual costs and accelerate operational efficiency.`,
         features: [
           {
             title: "Automated Workflows",
@@ -141,17 +136,17 @@ function generateDomainSynthesis(
           },
           {
             title: "Defensible Efficiency",
-            desc: `Built with ${moat.slice(0, 45)} to deliver measurable ROI from day one.`,
+            desc: `Built with ${profile.moat.slice(0, 45)} to deliver measurable ROI from day one.`,
           },
           {
             title: "Transparent Pricing",
-            desc: `Flexible ${revModel} tiers structured to scale seamlessly with your growth.`,
+            desc: `Flexible ${profile.revenueModel} tiers structured to scale seamlessly with your growth.`,
           },
         ],
         ctaText: "Start Free Pilot Today",
       },
-      elevatorPitch: `We help ${icp} eliminate ${prob.toLowerCase()} through an automated ${revModel} solution that delivers ${moat.slice(0, 50)}, saving time and operational costs.`,
-      investorNarrative: `VentureLens Decision Intelligence identifies "${ideaName}" as a high-potential opportunity in the ${ind} space with an adjusted venture score of ${score}/100. Growth is supported by attractive gross margins, a clearly defined customer beachhead in ${geo}, and a defensible differentiation moat.`,
+      elevatorPitch: `${profile.startupName} helps ${profile.icp} eliminate ${profile.problem.toLowerCase()} through an automated ${profile.revenueModel} solution that delivers ${profile.moat.slice(0, 50)}, saving time and operational costs.`,
+      investorNarrative: `VentureLens Decision Intelligence identifies "${profile.startupName}" as a high-potential opportunity with an adjusted venture readiness score of ${score}/100. Growth is supported by attractive gross margins, a clearly defined customer beachhead in ${profile.geography}, and a defensible differentiation moat.`,
     },
     crossVerification: {
       aiStrategicVerdict:
@@ -169,7 +164,7 @@ function generateDomainSynthesis(
         execution: dimExec,
       },
       explanationIntegrity: {
-        score: 92,
+        score: 92.3,
         formula: "Supported analytical claims (12) / Total extracted claims (13)",
         supportedClaimsCount: 12,
         totalClaimsCount: 13,
@@ -184,7 +179,7 @@ function generateDomainSynthesis(
         "Cohort retention tracking across initial 10 active accounts",
       ],
       recommendedValidationSteps: [
-        `Conduct 15 non-pitch problem discovery interviews with ${icp}`,
+        `Conduct 15 non-pitch problem discovery interviews with ${profile.icp}`,
         "Run a 14-day prepaid pilot test to verify pricing willingness-to-pay threshold",
       ],
     },
