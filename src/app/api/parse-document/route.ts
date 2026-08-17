@@ -2,154 +2,219 @@ import { NextResponse } from "next/server";
 import { AIProvider } from "@/lib/engines/ai-provider";
 import { QuestionnaireAnswers } from "@/types";
 import { safeJsonParse } from "@/lib/utils/json-repair";
-import { cleanFieldText, extractStartupName } from "@/lib/utils/clean-inputs";
+import { cleanFieldText } from "@/lib/utils/clean-inputs";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
+// ─── Revenue Model Normalizer ─────────────────────────────────────────────────
 function normalizeRevenueModel(rawModel?: string): QuestionnaireAnswers["revenueModel"] {
   if (!rawModel) return "SaaS";
   const lower = rawModel.toLowerCase();
-  if (lower.includes("marketplace") || lower.includes("platform") || lower.includes("take rate") || lower.includes("commission")) {
-    return "Marketplace";
-  }
-  if (lower.includes("transaction") || lower.includes("fee") || lower.includes("pay-as-you-go") || lower.includes("usage") || lower.includes("per claim")) {
-    return "Transaction";
-  }
-  if (lower.includes("licens") || lower.includes("patent") || lower.includes("ip ")) {
-    return "Licensing";
-  }
-  if (lower.includes("subscription") || lower.includes("recurring") || lower.includes("sub ")) {
-    return "Subscription";
-  }
-  if (lower.includes("saas") || lower.includes("software")) {
-    return "SaaS";
-  }
+  if (lower.includes("marketplace") || lower.includes("platform") || lower.includes("take rate") || lower.includes("commission")) return "Marketplace";
+  if (lower.includes("transaction") || lower.includes("fee") || lower.includes("pay-as-you-go") || lower.includes("usage") || lower.includes("per claim")) return "Transaction";
+  if (lower.includes("licens") || lower.includes("patent") || lower.includes("ip ")) return "Licensing";
+  if (lower.includes("subscription") || lower.includes("recurring") || lower.includes("sub ")) return "Subscription";
+  if (lower.includes("saas") || lower.includes("software")) return "SaaS";
   return "Other";
 }
 
-async function extractPptxText(buffer: Buffer): Promise<string> {
-  try {
-    const JSZip = require("jszip");
-    const zip = await JSZip.loadAsync(buffer);
-    const slideFiles = Object.keys(zip.files)
-      .filter((name) => /^ppt\/slides\/slide\d+\.xml$/i.test(name))
-      .sort((a, b) => {
-        const numA = parseInt(a.match(/\d+/)![0], 10);
-        const numB = parseInt(b.match(/\d+/)![0], 10);
-        return numA - numB;
-      });
-
-    let fullPptText = "";
-    for (const file of slideFiles) {
-      const slideXml = await zip.files[file].async("text");
-      const matches = slideXml.match(/<a:t[^>]*>([\s\S]*?)<\/a:t>/g) || [];
-      const slideText = matches
-        .map((m: string) => m.replace(/<[^>]+>/g, "").trim())
-        .filter(Boolean)
-        .join(" ");
-
-      if (slideText) {
-        const slideNum = file.match(/\d+/)![0];
-        fullPptText += `\n[Slide ${slideNum}]: ${slideText}\n`;
-      }
-    }
-    return fullPptText.trim();
-  } catch (err) {
-    console.warn("[ParseDocument] PPTX extraction error:", err);
-    return "";
-  }
-}
-
+// ─── PDF Text Extraction ──────────────────────────────────────────────────────
 async function extractPdfText(buffer: Buffer): Promise<string> {
-  // Method 1: pdf-parse v2 PDFParse class
+  // Method 1: pdf-parse v2 PDFParse class (.getText() returns { pages, text, total })
   try {
     const pdfLib = require("pdf-parse");
     if (pdfLib?.PDFParse) {
       const parser = new pdfLib.PDFParse({ data: buffer });
       const result = await parser.getText();
-      try { await parser.destroy(); } catch (e) {}
+      try { await parser.destroy(); } catch (_) {}
+
+      // result is { pages: [...], text: string, total: number }
+      if (result?.text && typeof result.text === "string" && result.text.trim().length > 10) {
+        console.log(`[ParseDocument] PDF extracted via PDFParse class: ${result.text.length} chars`);
+        return result.text.trim();
+      }
+      // Some versions return string directly
       if (typeof result === "string" && result.trim().length > 10) {
         return result.trim();
       }
-      if (result?.text && typeof result.text === "string" && result.text.trim().length > 10) {
-        return result.text.trim();
+      // Try pages array
+      if (Array.isArray(result?.pages)) {
+        const pageText = result.pages.map((p: any) => p.text || "").join("\n\n");
+        if (pageText.trim().length > 10) {
+          console.log(`[ParseDocument] PDF extracted via pages array: ${pageText.length} chars`);
+          return pageText.trim();
+        }
       }
-    } else if (typeof pdfLib === "function") {
-      const data = await pdfLib(buffer);
+    }
+  } catch (e) {
+    console.warn("[ParseDocument] pdf-parse PDFParse class failed:", (e as Error).message);
+  }
+
+  // Method 2: Try calling pdf-parse as a default function (some versions expose it)
+  try {
+    const pdfLib = require("pdf-parse");
+    const fn = pdfLib.default || pdfLib;
+    if (typeof fn === "function") {
+      const data = await fn(buffer);
       if (data?.text && data.text.trim().length > 10) {
+        console.log(`[ParseDocument] PDF extracted via default function: ${data.text.length} chars`);
         return data.text.trim();
       }
     }
   } catch (e) {
-    console.warn("[ParseDocument] pdf-parse method 1 skipped:", e);
+    console.warn("[ParseDocument] pdf-parse default function failed:", (e as Error).message);
   }
 
-  // Method 2: Raw PDF text stream and TJ/Tj operators extraction
+  // Method 3: Extract raw Tj/TJ text operators from PDF binary stream
   try {
-    const raw = buffer.toString("latin1");
-    // Find text between parentheses followed by Tj or inside brackets before TJ
-    const tjMatches = raw.match(/\(([^()]{2,})\)\s*Tj/g) || [];
-    const blockMatches = raw.match(/BT\s+([\s\S]+?)\s+ET/g) || [];
-    
-    let extractedWords: string[] = [];
-    tjMatches.forEach((m) => {
-      const text = m.replace(/[\(\)]|Tj/g, "").trim();
-      if (text.length > 1) extractedWords.push(text);
-    });
+    const rawLatin = buffer.toString("latin1");
+    const chunks: string[] = [];
 
-    if (extractedWords.length > 5) {
-      return extractedWords.join(" ");
+    // Match (text) Tj  — immediate text strings
+    const tjRegex = /\(([^()\\]{1,200}(?:\\.[^()\\]{0,200})*)\)\s*Tj/g;
+    let m: RegExpExecArray | null;
+    while ((m = tjRegex.exec(rawLatin)) !== null) {
+      const txt = m[1]
+        .replace(/\\n/g, " ")
+        .replace(/\\r/g, " ")
+        .replace(/\\t/g, " ")
+        .replace(/\\\(/g, "(")
+        .replace(/\\\)/g, ")")
+        .replace(/\\\\/g, "\\")
+        .trim();
+      if (txt.length > 1 && /[a-zA-Z0-9]/.test(txt)) chunks.push(txt);
     }
 
-    // Clean ASCII strings
-    const asciiStrings = raw
-      .replace(/[^\x20-\x7E\n\r\t]/g, " ")
-      .split(/\s{2,}/)
-      .filter((s) => s.length > 3 && /[a-zA-Z]/.test(s) && !s.includes("obj") && !s.includes("endobj"));
-
-    if (asciiStrings.length > 10) {
-      return asciiStrings.slice(0, 300).join(" ");
+    if (chunks.length > 8) {
+      const result = chunks.join(" ");
+      console.log(`[ParseDocument] PDF extracted via TJ operator: ${result.length} chars`);
+      return result;
     }
   } catch (e) {
-    console.warn("[ParseDocument] PDF raw fallback skipped:", e);
+    console.warn("[ParseDocument] PDF TJ extraction failed:", (e as Error).message);
+  }
+
+  // Method 4: Clean printable ASCII extraction (broad fallback)
+  try {
+    const raw = buffer.toString("latin1");
+    const words = raw
+      .replace(/[^\x20-\x7E\n\r\t]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && /[a-zA-Z]{2,}/.test(w) && !["obj", "endobj", "stream", "endstream", "xref", "startxref", "trailer"].includes(w.toLowerCase()));
+
+    if (words.length > 30) {
+      const result = words.join(" ");
+      console.log(`[ParseDocument] PDF extracted via ASCII fallback: ${result.length} chars`);
+      return result;
+    }
+  } catch (e) {
+    console.warn("[ParseDocument] PDF ASCII fallback failed:", (e as Error).message);
   }
 
   return "";
 }
 
+// ─── PPTX Text Extraction ─────────────────────────────────────────────────────
+async function extractPptxText(buffer: Buffer): Promise<string> {
+  try {
+    const JSZip = require("jszip");
+    const zip = await JSZip.loadAsync(buffer);
+
+    const slideFiles = Object.keys(zip.files)
+      .filter((name) => /^ppt\/slides\/slide\d+\.xml$/i.test(name))
+      .sort((a, b) => {
+        const numA = parseInt((a.match(/\d+/) || ["0"])[0], 10);
+        const numB = parseInt((b.match(/\d+/) || ["0"])[0], 10);
+        return numA - numB;
+      });
+
+    if (slideFiles.length === 0) {
+      console.warn("[ParseDocument] PPTX: no slide XML files found in zip");
+    }
+
+    let fullText = "";
+    for (const file of slideFiles) {
+      const xml = await zip.files[file].async("text");
+      // Extract all <a:t> text tags
+      const matches = xml.match(/<a:t[^>]*>([^<]*)<\/a:t>/g) || [];
+      const slideText = matches
+        .map((m: string) => m.replace(/<[^>]+>/g, "").trim())
+        .filter((t: string) => t.length > 0)
+        .join(" ");
+      if (slideText) {
+        const num = (file.match(/\d+/) || ["?"])[0];
+        fullText += `\n[Slide ${num}]: ${slideText}\n`;
+      }
+    }
+    if (fullText.trim().length > 10) {
+      console.log(`[ParseDocument] PPTX extracted ${fullText.length} chars from ${slideFiles.length} slides`);
+      return fullText.trim();
+    }
+  } catch (e) {
+    console.warn("[ParseDocument] PPTX JSZip extraction failed:", (e as Error).message);
+  }
+  return "";
+}
+
+// ─── DOCX Text Extraction ─────────────────────────────────────────────────────
 async function extractDocxText(buffer: Buffer): Promise<string> {
+  // Method 1: mammoth
   try {
     const mammoth = require("mammoth");
     const result = await mammoth.extractRawText({ buffer });
-    if (result.value && result.value.trim().length > 10) {
+    if (result?.value && result.value.trim().length > 10) {
+      console.log(`[ParseDocument] DOCX extracted via mammoth: ${result.value.length} chars`);
       return result.value.trim();
     }
   } catch (e) {
-    console.warn("[ParseDocument] mammoth error:", e);
+    console.warn("[ParseDocument] mammoth DOCX failed:", (e as Error).message);
+  }
+
+  // Method 2: DOCX is a ZIP — extract word/document.xml directly
+  try {
+    const JSZip = require("jszip");
+    const zip = await JSZip.loadAsync(buffer);
+    if (zip.files["word/document.xml"]) {
+      const xml = await zip.files["word/document.xml"].async("text");
+      const text = xml
+        .replace(/<w:br[^>]*\/>/gi, "\n")
+        .replace(/<w:p[ >]/gi, "\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/[ \t]{2,}/g, " ")
+        .trim();
+      if (text.length > 10) {
+        console.log(`[ParseDocument] DOCX extracted via XML: ${text.length} chars`);
+        return text;
+      }
+    }
+  } catch (e) {
+    console.warn("[ParseDocument] DOCX JSZip XML extraction failed:", (e as Error).message);
   }
   return "";
 }
 
-function getSmartDocumentSample(fullText: string): string {
-  const cleaned = fullText
+// ─── Smart sampling for large documents ─────────────────────────────────────
+function sampleDocument(text: string): string {
+  const clean = text
     .replace(/(strictly confidential|all rights reserved|page \d+ of \d+|\d+\s*\|\s*page)/gi, "")
     .replace(/[\r\n]{3,}/g, "\n\n")
     .trim();
-
-  if (cleaned.length <= 12000) return cleaned;
-
-  const beginning = cleaned.slice(0, 6000);
-  const midPoint = Math.floor(cleaned.length / 2);
-  const middle = cleaned.slice(midPoint - 2000, midPoint + 2000);
-  const end = cleaned.slice(-2500);
-
-  return `${beginning}\n\n--- [MIDDLE SECTION SAMPLE] ---\n${middle}\n\n--- [FINAL SECTION SAMPLE] ---\n${end}`;
+  if (clean.length <= 12000) return clean;
+  const mid = Math.floor(clean.length / 2);
+  return `${clean.slice(0, 6000)}\n\n--- [MIDDLE] ---\n${clean.slice(mid - 1500, mid + 1500)}\n\n--- [END] ---\n${clean.slice(-2500)}`;
 }
 
+// ─── Main POST Handler ────────────────────────────────────────────────────────
 export async function POST(req: Request) {
   try {
     let documentText = "";
+    let fileName = "";
     const contentType = req.headers.get("content-type") || "";
 
     if (contentType.includes("multipart/form-data")) {
@@ -157,115 +222,145 @@ export async function POST(req: Request) {
       const file = formData.get("file") as File | null;
 
       if (!file) {
-        return NextResponse.json({ error: "No file was uploaded." }, { status: 400 });
+        return NextResponse.json({ error: "No file was uploaded. Please select a PDF, PPTX, or DOCX file." }, { status: 400 });
       }
 
-      const fileName = file.name.toLowerCase();
+      fileName = file.name.toLowerCase();
       const arrayBuf = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuf);
+
+      console.log(`[ParseDocument] Processing "${file.name}" (${buffer.length} bytes)`);
 
       if (fileName.endsWith(".pptx") || fileName.endsWith(".ppt")) {
         documentText = await extractPptxText(buffer);
         if (!documentText) {
-          documentText = buffer.toString("utf-8").replace(/[^\x20-\x7E\n\r\t]/g, " ").replace(/\s+/g, " ");
+          // Broad plaintext fallback for PPT
+          documentText = buffer.toString("utf-8").replace(/[^\x20-\x7E\n\r\t]/g, " ").replace(/\s+/g, " ").trim();
         }
       } else if (fileName.endsWith(".pdf")) {
         documentText = await extractPdfText(buffer);
       } else if (fileName.endsWith(".docx") || fileName.endsWith(".doc")) {
         documentText = await extractDocxText(buffer);
-      } else {
+      } else if (
+        fileName.endsWith(".txt") ||
+        fileName.endsWith(".md") ||
+        fileName.endsWith(".csv") ||
+        fileName.endsWith(".json")
+      ) {
         documentText = buffer.toString("utf-8");
+      } else {
+        // Try UTF-8, fallback to latin1
+        documentText = buffer.toString("utf-8").replace(/\uFFFD/g, " ").trim();
+        if (documentText.length < 20) documentText = buffer.toString("latin1").replace(/[^\x20-\x7E\n\r\t]/g, " ").trim();
       }
     } else {
-      const body = await req.json();
+      const body = await req.json().catch(() => ({}));
       documentText = body.text || "";
+      fileName = body.fileName || "pasted-text.txt";
     }
 
-    if (!documentText || documentText.trim().length < 10) {
+    if (!documentText || documentText.trim().length < 20) {
       return NextResponse.json(
-        { error: "Could not extract readable text from document. Please ensure your PDF or PPTX contains readable text or copy-paste text directly." },
+        {
+          error: `Could not extract readable text from "${fileName || "your document"}". ` +
+            `If it's a scanned PDF (image-only), try copy-pasting the text directly into the startup idea field instead.`,
+        },
         { status: 400 }
       );
     }
 
-    const sampledText = getSmartDocumentSample(documentText);
-    console.log(`[API/ParseDocument] Extracted ${documentText.length} chars. Dispatching to OpenRouter...`);
+    const sampledText = sampleDocument(documentText);
+    const wordCount = documentText.split(/\s+/).filter(Boolean).length;
+    console.log(`[ParseDocument] Successfully extracted ${wordCount} words from "${fileName}". Sending to OpenRouter AI...`);
 
+    // ─── AI Parameter Extraction ──────────────────────────────────────────────
     const aiProvider = new AIProvider();
-    const systemPrompt = `You are an elite Venture Capital Diligence Analyst specializing in pitch deck evaluation.
-Read the provided pitch deck text thoroughly and extract exact, accurate, startup-specific business parameters.
-DO NOT use placeholder or generic statements — extract ONLY facts, metrics, and details found in the deck.
 
-Output ONLY a JSON object matching this schema:
+    const systemPrompt = `You are an elite Venture Capital Diligence Analyst reading a startup pitch deck.
+Extract every specific business parameter from the provided pitch deck text.
+STRICT RULES:
+- Only use facts from the pitch deck text. Never invent data.
+- DO NOT output any field labels like "Startup Name:" or "Problem:" in your values.
+- All values must be clean prose with no prefix labels.
+- For revenueModel, output exactly one of: SaaS, Subscription, Marketplace, Transaction, Licensing, Other
+
+Output ONLY a valid JSON object:
 {
-  "idea": "Clean 2-3 sentence overview of what the startup does, who it is for, and the core value proposition (do not prepend 'Startup Name:' or 'One-line pitch:').",
-  "targetCustomer": "Specific Ideal Customer Profile (ICP) and buyer persona.",
-  "problemSolved": "The acute problem, inefficiency, or pain point described.",
-  "existingAlternatives": "Current legacy methods, competitors, or manual workarounds being replaced.",
-  "geography": "Target launch market / geographic focus.",
-  "revenueModel": "SaaS" | "Subscription" | "Marketplace" | "Transaction" | "Licensing" | "Other",
-  "pricingStrategy": "Extracted pricing model, tiers, take rates, or contract values.",
-  "competitors": "Comma-separated list of competitor companies mentioned or implied in the sector.",
-  "differentiation": "Defensible moat, proprietary tech, speed advantage, or network effect.",
-  "currentValidation": "Traction, revenue/ARR, pilots, LOIs, waitlist size, or prototype milestone.",
-  "teamBackground": "Founding team background, past experience, domain credentials.",
-  "distributionChannel": "GTM distribution channels and acquisition strategy.",
-  "tamEstimate": "Total addressable market (TAM/SAM) sizing estimate."
+  "idea": "2-3 sentence description of what the startup does, who it serves, and the core value proposition.",
+  "targetCustomer": "Specific buyer persona and ICP.",
+  "problemSolved": "The acute problem or pain point being solved.",
+  "existingAlternatives": "Current manual methods or competitor products being replaced.",
+  "geography": "Target launch market or geography.",
+  "revenueModel": "SaaS",
+  "pricingStrategy": "Pricing model, tiers, or contract values mentioned.",
+  "competitors": "Comma-separated list of competitor companies or categories mentioned.",
+  "differentiation": "Key moat, proprietary tech, data advantage, or speed edge.",
+  "currentValidation": "Traction, ARR, paying customers, pilots, LOIs, or waitlist size.",
+  "teamBackground": "Founding team experience, domain credentials, past companies.",
+  "distributionChannel": "Sales and marketing strategy or distribution channels.",
+  "tamEstimate": "TAM, SAM, or market sizing estimate mentioned."
 }`;
 
-    const userPrompt = `PITCH DECK CONTENT:\n${sampledText}`;
+    const userPrompt = `PITCH DECK TEXT:\n\n${sampledText}`;
 
     let answers: Partial<QuestionnaireAnswers> = {};
 
     try {
       const responseText = await aiProvider.generateCompletion(systemPrompt, userPrompt, true);
-      const rawParsed = safeJsonParse<any>(responseText, {});
+      const rawParsed = safeJsonParse<any>(responseText, null);
 
-      answers = {
-        idea: cleanFieldText(rawParsed.idea) || documentText.slice(0, 350),
-        targetCustomer: cleanFieldText(rawParsed.targetCustomer) || "Target enterprise buyers",
-        problemSolved: cleanFieldText(rawParsed.problemSolved) || "Operational friction & cost overhead",
-        existingAlternatives: cleanFieldText(rawParsed.existingAlternatives) || "Manual workarounds",
-        geography: cleanFieldText(rawParsed.geography) || "Global",
-        revenueModel: normalizeRevenueModel(rawParsed.revenueModel),
-        pricingStrategy: cleanFieldText(rawParsed.pricingStrategy) || "Tiered pricing",
-        competitors: cleanFieldText(rawParsed.competitors) || "",
-        differentiation: cleanFieldText(rawParsed.differentiation) || "Specialized workflow advantage",
-        currentValidation: cleanFieldText(rawParsed.currentValidation) || "Concept stage",
-        teamBackground: cleanFieldText(rawParsed.teamBackground) || "Founding team",
-        distributionChannel: cleanFieldText(rawParsed.distributionChannel) || "Direct outbound sales",
-        tamEstimate: cleanFieldText(rawParsed.tamEstimate) || "Large addressable TAM",
-      };
+      if (rawParsed && typeof rawParsed === "object") {
+        answers = {
+          idea: cleanFieldText(rawParsed.idea) || documentText.slice(0, 300),
+          targetCustomer: cleanFieldText(rawParsed.targetCustomer) || "",
+          problemSolved: cleanFieldText(rawParsed.problemSolved) || "",
+          existingAlternatives: cleanFieldText(rawParsed.existingAlternatives) || "",
+          geography: cleanFieldText(rawParsed.geography) || "",
+          revenueModel: normalizeRevenueModel(rawParsed.revenueModel),
+          pricingStrategy: cleanFieldText(rawParsed.pricingStrategy) || "",
+          competitors: cleanFieldText(rawParsed.competitors) || "",
+          differentiation: cleanFieldText(rawParsed.differentiation) || "",
+          currentValidation: cleanFieldText(rawParsed.currentValidation) || "",
+          teamBackground: cleanFieldText(rawParsed.teamBackground) || "",
+          distributionChannel: cleanFieldText(rawParsed.distributionChannel) || "",
+          tamEstimate: cleanFieldText(rawParsed.tamEstimate) || "",
+        };
+        console.log("[ParseDocument] ✓ AI successfully extracted all parameters from pitch deck.");
+      } else {
+        throw new Error("AI returned unparseable response");
+      }
     } catch (llmErr) {
-      console.warn("[ParseDocument] OpenRouter call failed, extracting heuristic parameters:", llmErr);
+      // Heuristic fallback: use the raw extracted text as the startup idea, prompt user to fill details
+      console.warn("[ParseDocument] AI extraction failed, using raw text fallback:", (llmErr as Error).message);
       answers = {
-        idea: documentText.slice(0, 300),
-        targetCustomer: "Target industry buyers",
-        problemSolved: "Operational manual inefficiencies",
-        existingAlternatives: "Legacy spreadsheets and manual labor",
-        geography: "Target regional market",
+        idea: documentText.slice(0, 400),
+        targetCustomer: "",
+        problemSolved: "",
+        existingAlternatives: "",
+        geography: "",
         revenueModel: "SaaS",
-        pricingStrategy: "Tiered SaaS subscription",
+        pricingStrategy: "",
         competitors: "",
-        differentiation: "Proprietary automated workflow",
-        currentValidation: "Early discovery stage",
-        teamBackground: "Domain founding team",
-        distributionChannel: "Direct sales outreach",
-        tamEstimate: "Large market opportunity",
+        differentiation: "",
+        currentValidation: "",
+        teamBackground: "",
+        distributionChannel: "",
+        tamEstimate: "",
       };
     }
 
-    console.log("[API/ParseDocument] Pitch deck parsed successfully.");
     return NextResponse.json({
       success: true,
-      extractedWords: documentText.split(/\s+/).length,
+      extractedWords: wordCount,
+      fileName: fileName,
       answers,
-      rawText: documentText.slice(0, 1500),
+      rawText: documentText.slice(0, 2000),
     });
+
   } catch (error: any) {
-    console.error("[API/ParseDocument] Document parsing failed:", error);
+    console.error("[ParseDocument] Unhandled error:", error);
     return NextResponse.json(
-      { error: error?.message || "Failed to parse pitch deck." },
+      { error: error?.message || "Failed to parse the uploaded document. Please try again." },
       { status: 500 }
     );
   }

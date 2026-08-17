@@ -121,9 +121,16 @@ export default function WizardPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file size (max 25MB)
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error("File too large", { description: "Please upload a file smaller than 25MB." });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setIsParsingDoc(true);
-    const toastId = toast.loading(`Parsing "${file.name}" with AI...`, {
-      description: "Extracting pitch deck heuristics and business model details.",
+    const toastId = toast.loading(`📄 Parsing "${file.name}"...`, {
+      description: "Extracting text, then running AI to fill all fields automatically.",
     });
 
     try {
@@ -135,13 +142,16 @@ export default function WizardPage() {
         body: formData,
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to parse document");
+        throw new Error(data.error || "Failed to parse document");
       }
 
-      const data = await res.json();
       const extracted: Partial<QuestionnaireAnswers> = data.answers || {};
+
+      // Count how many fields were actually populated
+      const filledFields = Object.values(extracted).filter((v) => v && String(v).trim().length > 2).length;
 
       // Populate all extracted fields into store in a single atomic update
       setAnswers({
@@ -149,16 +159,17 @@ export default function WizardPage() {
         ...extracted,
       });
 
-      toast.success("Pitch Deck Parsed with AI!", {
+      toast.success("✅ Pitch Deck Parsed!", {
         id: toastId,
-        description: `Extracted ${data.extractedWords} words & populated business parameters.`,
-        duration: 5000,
+        description: `Extracted ${data.extractedWords?.toLocaleString()} words · ${filledFields} fields auto-filled. Review & run analysis.`,
+        duration: 7000,
       });
     } catch (err: any) {
       console.error("Document parsing error:", err);
-      toast.error("Document upload failed", {
+      toast.error("❌ Document parse failed", {
         id: toastId,
-        description: err?.message || "Could not extract readable text from file.",
+        description: err?.message || "Could not extract text. Try a different file or paste the content directly.",
+        duration: 8000,
       });
     } finally {
       setIsParsingDoc(false);
