@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useVentureStore } from "@/stores/ventureStore";
 import { toast } from "sonner";
 import { QuestionnaireAnswers } from "@/types";
+import JSZip from "jszip";
 
 export default function WizardPage() {
   const router = useRouter();
@@ -116,31 +117,109 @@ export default function WizardPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  // AI Document Upload & Parse Handler
+  // AI Document Upload & Parse Handler (with Client-Side Pre-Extraction for Large PPTX/DOCX/Text)
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (max 25MB)
-    if (file.size > 25 * 1024 * 1024) {
-      toast.error("File too large", { description: "Please upload a file smaller than 25MB." });
+    // Validate file size (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("File too large", { description: "Please upload a file smaller than 50MB." });
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
     setIsParsingDoc(true);
     const toastId = toast.loading(`📄 Parsing "${file.name}"...`, {
-      description: "Extracting text, then running AI to fill all fields automatically.",
+      description: "Extracting deck text and running venture intelligence extraction...",
     });
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      let extractedClientText = "";
+      const lowerName = file.name.toLowerCase();
 
-      const res = await fetch("/api/parse-document", {
-        method: "POST",
-        body: formData,
-      });
+      // 1. Client-Side PPTX extraction (instant, bypasses Vercel 4.5MB payload limits)
+      if (lowerName.endsWith(".pptx") || lowerName.endsWith(".ppt")) {
+        try {
+          const zip = await JSZip.loadAsync(file);
+          const slideFiles = Object.keys(zip.files)
+            .filter((name) => /^ppt\/slides\/slide\d+\.xml$/i.test(name))
+            .sort((a, b) => {
+              const numA = parseInt((a.match(/\d+/) || ["0"])[0], 10);
+              const numB = parseInt((b.match(/\d+/) || ["0"])[0], 10);
+              return numA - numB;
+            });
+
+          let fullText = "";
+          for (const slideFile of slideFiles) {
+            const xml = await zip.files[slideFile].async("text");
+            const matches = xml.match(/<a:t[^>]*>([^<]*)<\/a:t>/g) || [];
+            const slideText = matches
+              .map((m: string) => m.replace(/<[^>]+>/g, "").trim())
+              .filter((t: string) => t.length > 0)
+              .join(" ");
+            if (slideText) {
+              const num = (slideFile.match(/\d+/) || ["?"])[0];
+              fullText += `[Slide ${num}]: ${slideText}\n`;
+            }
+          }
+          extractedClientText = fullText.trim();
+        } catch (zipErr) {
+          console.warn("Client PPTX extraction failed, will fall back to server upload:", zipErr);
+        }
+      } else if (lowerName.endsWith(".docx")) {
+        try {
+          const zip = await JSZip.loadAsync(file);
+          if (zip.files["word/document.xml"]) {
+            const xml = await zip.files["word/document.xml"].async("text");
+            extractedClientText = xml
+              .replace(/<w:br[^>]*\/>/gi, "\n")
+              .replace(/<w:p[ >]/gi, "\n")
+              .replace(/<[^>]+>/g, "")
+              .replace(/&amp;/g, "&")
+              .replace(/&lt;/g, "<")
+              .replace(/&gt;/g, ">")
+              .replace(/&quot;/g, '"')
+              .replace(/&#39;/g, "'")
+              .trim();
+          }
+        } catch (docxErr) {
+          console.warn("Client DOCX extraction failed:", docxErr);
+        }
+      } else if (
+        lowerName.endsWith(".txt") ||
+        lowerName.endsWith(".md") ||
+        lowerName.endsWith(".csv") ||
+        lowerName.endsWith(".json")
+      ) {
+        try {
+          extractedClientText = await file.text();
+        } catch (txtErr) {
+          console.warn("Client text extraction failed:", txtErr);
+        }
+      }
+
+      let res: Response;
+
+      // If client pre-extracted text, send lightweight JSON
+      if (extractedClientText && extractedClientText.length > 20) {
+        res = await fetch("/api/parse-document", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: extractedClientText,
+            fileName: file.name,
+          }),
+        });
+      } else {
+        // Fallback to server-side multipart stream
+        const formData = new FormData();
+        formData.append("file", file);
+        res = await fetch("/api/parse-document", {
+          method: "POST",
+          body: formData,
+        });
+      }
 
       const data = await res.json();
 

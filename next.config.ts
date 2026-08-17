@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Raise the body parser size limit for the parse-document route
+  // Vercel default is 4.5MB which blocks large PPTX/PDF pitch decks
+  serverExternalPackages: ["pdf-parse", "jszip", "mammoth"],
   async headers() {
     return [
       {

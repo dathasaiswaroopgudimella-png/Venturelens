@@ -306,7 +306,13 @@ export default function ReportPage() {
                     <path
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                       fill="none"
-                      stroke="#10b981"
+                      stroke={
+                        scores.overallScore >= 75
+                          ? "#10b981"
+                          : scores.overallScore >= 55
+                          ? "#f59e0b"
+                          : "#ef4444"
+                      }
                       strokeDasharray={`${scores.overallScore}, 100`}
                       strokeLinecap="round"
                       strokeWidth="2.5"
@@ -316,12 +322,22 @@ export default function ReportPage() {
                     <span className="text-4xl font-extrabold text-on-surface font-mono">
                       {scores.overallScore}
                     </span>
-                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/5 px-2 py-0.5 rounded uppercase mt-1">
-                      {scores.overallScore >= 80
-                        ? "Strong Venture Potential"
-                        : scores.overallScore >= 60
-                        ? "Moderate Potential"
-                        : "High Risk / Pivot"}
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase mt-1 ${
+                      scores.overallScore >= 75
+                        ? "text-emerald-700 bg-emerald-100"
+                        : scores.overallScore >= 55
+                        ? "text-amber-700 bg-amber-100"
+                        : scores.overallScore >= 30
+                        ? "text-orange-700 bg-orange-100"
+                        : "text-red-700 bg-red-100"
+                    }`}>
+                      {scores.overallScore >= 75
+                        ? "Strong Venture / Scale"
+                        : scores.overallScore >= 55
+                        ? "Moderate Potential / Pivot"
+                        : scores.overallScore >= 30
+                        ? "High Risk / Re-Evaluate"
+                        : "Non-Viable / Reject"}
                     </span>
                   </div>
                 </div>
@@ -447,7 +463,13 @@ export default function ReportPage() {
                 <span className="text-lg font-mono font-extrabold text-secondary">
                   {crossVerification.agreementScore}%
                 </span>
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded">
+                <span className={`text-xs font-bold px-2.5 py-1 rounded ${
+                  crossVerification.agreementScore >= 75
+                    ? "text-emerald-700 bg-emerald-100"
+                    : crossVerification.agreementScore >= 50
+                    ? "text-amber-700 bg-amber-100"
+                    : "text-red-700 bg-red-100"
+                }`}>
                   {crossVerification.agreementStatus}
                 </span>
               </div>
@@ -456,11 +478,11 @@ export default function ReportPage() {
             {/* Dimension-by-Dimension Breakdown Cards */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[
-                { name: "Problem Agreement", val: crossVerification.dimensionAgreement?.problem || 91 },
-                { name: "Customer Agreement", val: crossVerification.dimensionAgreement?.customer || 83 },
-                { name: "Market Agreement", val: crossVerification.dimensionAgreement?.market || 61 },
-                { name: "Business Model", val: crossVerification.dimensionAgreement?.businessModel || 58 },
-                { name: "Execution Fit", val: crossVerification.dimensionAgreement?.execution || 44 },
+                { name: "Problem Agreement", val: crossVerification.dimensionAgreement?.problem ?? scores.problem.score },
+                { name: "Customer Agreement", val: crossVerification.dimensionAgreement?.customer ?? scores.customer.score },
+                { name: "Market Agreement", val: crossVerification.dimensionAgreement?.market ?? scores.market.score },
+                { name: "Business Model", val: crossVerification.dimensionAgreement?.businessModel ?? scores.businessModel.score },
+                { name: "Execution Fit", val: crossVerification.dimensionAgreement?.execution ?? scores.execution.score },
               ].map((dim, idx) => (
                 <div key={idx} className="p-3 bg-surface rounded-lg border border-outline-variant/30 text-center">
                   <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-1">

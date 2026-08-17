@@ -15,6 +15,55 @@ export interface CleanedStartupProfile {
   team: string;
   distribution: string;
   tam: string;
+  isNonCommercial: boolean;
+}
+
+/**
+ * Checks whether the submission represents an informal/nonsense/personal activity
+ * rather than a legitimate commercial venture thesis.
+ */
+export function isNonCommercialSubmission(
+  ideaText?: string,
+  answers?: Partial<QuestionnaireAnswers>
+): boolean {
+  const text = (ideaText || "").toLowerCase().trim();
+  if (!text) return true;
+
+  const allText = [
+    ideaText,
+    answers?.problemSolved,
+    answers?.targetCustomer,
+    answers?.pricingStrategy,
+    answers?.differentiation,
+    answers?.revenueModel,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  // Personal activities, jokes, gibberish
+  if (
+    /\b(sleep|sleeping|say hello|say hi|doing nothing|watch movie|watching tv|eating food|eat food|play game|playing games|joke|haha|fun only|just for fun|hello world|wake up)\b/i.test(
+      text
+    )
+  ) {
+    const hasCommercialContext =
+      /\b(hardware|patient|hospital|clinical|diagnostic|saas|software|platform|b2b|enterprise|monetiz|revenue|\$\d+|₹\d+|arr|mrr|pilot|contract|infrastructure|cooling|thermal|fintech|biotech|analytics)\b/i.test(
+        allText
+      );
+    if (!hasCommercialContext) return true;
+  }
+
+  // Pure single-phrase or random string without business keywords
+  if (text.length < 35) {
+    const hasBusinessKeyword =
+      /\b(ai|saas|app|platform|tool|service|product|system|software|b2b|b2c|workflow|analytics|data|api|cloud|health|fintech|infra|marketplace|developer|sales|energy|cooling|hardware|deeptech|logistics|edtech)\b/i.test(
+        text
+      );
+    if (!hasBusinessKeyword) return true;
+  }
+
+  return false;
 }
 
 /**
@@ -39,7 +88,34 @@ export function cleanFieldText(text?: string): string {
     .replace(/STARTUP\s*NAME\s*:\s*([^\n]+)/gi, "$1")
     .replace(/ONE-?LINE\s*PITCH\s*:\s*([^\n]+)/gi, "$1")
     .replace(/PROBLEM\s*:\s*([^\n]+)/gi, "$1")
+    .replace(/\s+/g, " ")
     .trim();
+}
+
+/**
+ * Formats a clean, natural buyer persona title avoiding "Target Customers users"
+ */
+export function formatBuyerPersona(rawIcp?: string): string {
+  if (!rawIcp) return "prospective enterprise buyers";
+  const cleaned = cleanFieldText(rawIcp);
+  if (/^(target customers?|target users?|customers?|users?|anyone|everyone|people)$/i.test(cleaned)) {
+    return "prospective enterprise buyers";
+  }
+  // Trim long clauses
+  const shortIcp = cleaned.split(/,|;|\(|\bwho\b|\bthat\b|\bspecifically\b/i)[0].trim();
+  return shortIcp.length > 3 ? shortIcp : "target decision-makers";
+}
+
+/**
+ * Formats a natural geography string avoiding "users in Global"
+ */
+export function formatGeography(rawGeo?: string): string {
+  if (!rawGeo) return "initial target launch markets";
+  const cleaned = cleanFieldText(rawGeo);
+  if (/^(global|worldwide|everywhere|unspecified)$/i.test(cleaned)) {
+    return "initial regional beachhead markets";
+  }
+  return cleaned;
 }
 
 /**
@@ -60,9 +136,9 @@ export function cleanStartupAnswers(answers: QuestionnaireAnswers): CleanedStart
   const name = extractStartupName(rawIdea);
   const oneLiner = cleanFieldText(rawIdea);
   const problem = cleanFieldText(answers.problemSolved) || "operational inefficiency";
-  const icp = cleanFieldText(answers.targetCustomer) || "Target Customers";
-  const alternatives = cleanFieldText(answers.existingAlternatives) || "manual legacy alternatives";
-  const geography = cleanFieldText(answers.geography) || "Global";
+  const icp = formatBuyerPersona(answers.targetCustomer);
+  const alternatives = cleanFieldText(answers.existingAlternatives) || "manual legacy alternatives and spreadsheets";
+  const geography = formatGeography(answers.geography);
   const revenueModel = answers.revenueModel || "Subscription";
   const pricing = cleanFieldText(answers.pricingStrategy) || "Tiered pricing";
   const competitors = answers.competitors
@@ -71,8 +147,9 @@ export function cleanStartupAnswers(answers: QuestionnaireAnswers): CleanedStart
   const moat = cleanFieldText(answers.differentiation) || "proprietary speed & workflow edge";
   const validation = cleanFieldText(answers.currentValidation) || "Early concept";
   const team = cleanFieldText(answers.teamBackground) || "Founding team";
-  const distribution = cleanFieldText(answers.distributionChannel) || "Direct outbound";
+  const distribution = cleanFieldText(answers.distributionChannel) || "Direct outbound sales";
   const tam = cleanFieldText(answers.tamEstimate) || "Addressable market";
+  const isNonCommercial = isNonCommercialSubmission(rawIdea, answers);
 
   return {
     startupName: name,
@@ -89,5 +166,6 @@ export function cleanStartupAnswers(answers: QuestionnaireAnswers): CleanedStart
     team,
     distribution,
     tam,
+    isNonCommercial,
   };
 }

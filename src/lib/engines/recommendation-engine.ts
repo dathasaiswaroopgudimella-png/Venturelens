@@ -1,15 +1,7 @@
 import { ExtractedFacts, RuleOutcome, VentureScores, Recommendation } from "@/types";
+import { isNonCommercialSubmission, formatBuyerPersona, formatGeography } from "@/lib/utils/clean-inputs";
 
 export class RecommendationEngine {
-  private getShortIcp(rawIcp?: string): string {
-    if (!rawIcp) return "Target Enterprise Buyers";
-    // Clean long descriptions to crisp buyer title
-    const firstPart = rawIcp.split(/,|;|\(|\bwho\b|\bthat\b|\bspecifically\b/i)[0].trim();
-    if (firstPart.length > 5 && firstPart.length < 45) return firstPart;
-    const words = rawIcp.split(/\s+/).slice(0, 4).join(" ");
-    return words.length > 3 ? words : "Target Enterprise Buyers";
-  }
-
   generate(
     facts: ExtractedFacts,
     ruleOutcomes: RuleOutcome[],
@@ -18,12 +10,20 @@ export class RecommendationEngine {
     const recommendations: Recommendation[] = [];
     let recIdCounter = 1;
 
-    const shortIcp = this.getShortIcp(facts.customer.icp);
+    const shortIcp = formatBuyerPersona(facts.customer.icp);
     const tag0 = facts.market.industryTags[0] || "Industry";
+    const geo = formatGeography(facts.market.geography);
     const comps = facts.competition.competitorList.slice(0, 3).join(", ") || "incumbent solutions";
-    const isHardwareOrDeepTech = facts.market.industryTags.some((t) => /infrastructure|deeptech|cleantech|energy|hardware/i.test(t));
+    const isHardwareOrDeepTech = facts.market.industryTags.some((t) =>
+      /infrastructure|deeptech|cleantech|energy|hardware|cooling/i.test(t)
+    );
 
-    const addRec = (priority: "Critical" | "High" | "Medium" | "Low", title: string, description: string, timeframe: string) => {
+    const addRec = (
+      priority: "Critical" | "High" | "Medium" | "Low",
+      title: string,
+      description: string,
+      timeframe: string
+    ) => {
       recommendations.push({
         id: `REC_${String(recIdCounter++).padStart(2, "0")}`,
         priority,
@@ -33,6 +33,29 @@ export class RecommendationEngine {
       });
     };
 
+    // 0. Non-Commercial / Nonsense Thesis Branch
+    if (scores.overallScore < 20) {
+      addRec(
+        "Critical",
+        "Formulate an Addressable Problem Statement",
+        "Define an acute operational or consumer problem where legacy methods cause measurable financial, time, or operational loss.",
+        "Immediate Action"
+      );
+      addRec(
+        "Critical",
+        "Identify a Specific Target Buyer Persona",
+        "Pinpoint the exact economic decision-maker (job title, industry, budget authority) who actively pays to solve this friction.",
+        "Next 14 Days"
+      );
+      addRec(
+        "High",
+        "Define Monetization & Unit Economics Model",
+        "Determine viable pricing (annual SaaS, usage fee, licensing) where customer Lifetime Value (LTV) comfortably exceeds Acquisition Cost (CAC).",
+        "Next 30 Days"
+      );
+      return recommendations;
+    }
+
     // 1. Critical priorities based on rule failures
     const failures = ruleOutcomes.filter((r) => r.status === "FAIL");
     failures.forEach((f) => {
@@ -40,7 +63,7 @@ export class RecommendationEngine {
         addRec(
           "Critical",
           `Expand Addressable Beachhead in ${tag0}`,
-          `Broaden target deployment parameters beyond the initial cohort to include enterprise accounts across ${facts.market.geography || 'global regions'} to unlock venture scale.`,
+          `Broaden target deployment parameters beyond the initial cohort to include enterprise accounts across ${geo} to unlock venture scale.`,
           "Immediate Action"
         );
       } else if (f.id === "RULE_03_CROWDED_WEAK_MOAT") {
@@ -62,6 +85,20 @@ export class RecommendationEngine {
           "Critical",
           `Onboard Domain Specialist Advisors for ${tag0}`,
           `Due to engineering and operational complexity, recruit seasoned technical veterans with direct ${tag0} deployment experience.`,
+          "Immediate Action"
+        );
+      } else if (f.id === "RULE_10_NO_PROBLEM") {
+        addRec(
+          "Critical",
+          "Conduct 15 Problem Discovery Interviews",
+          `Interview 15 prospective ${shortIcp} to quantify their unprompted pain points and current manual workarounds.`,
+          "Immediate Action"
+        );
+      } else if (f.id === "RULE_11_NO_CUSTOMER") {
+        addRec(
+          "Critical",
+          "Narrow ICP to a Concrete Beachhead Segment",
+          `Define a narrow, high-urgency buyer persona in ${tag0} rather than targeting a broad, undifferentiated market.`,
           "Immediate Action"
         );
       }
@@ -102,7 +139,10 @@ export class RecommendationEngine {
     });
 
     // 3. Score-based recommendations
-    if (scores.competition.score < 65 && !recommendations.some((r) => r.title.includes("Defensibility") || r.title.includes("Audit"))) {
+    if (
+      scores.competition.score < 65 &&
+      !recommendations.some((r) => r.title.includes("Defensibility") || r.title.includes("Benchmark"))
+    ) {
       addRec(
         "High",
         `Conduct Competitive Benchmark Audit vs ${comps}`,
@@ -111,16 +151,22 @@ export class RecommendationEngine {
       );
     }
 
-    if (scores.risk.score < 65 && !recommendations.some((r) => r.title.includes("Compliance") || r.title.includes("Regulatory"))) {
+    if (
+      scores.risk.score < 65 &&
+      !recommendations.some((r) => r.title.includes("Compliance") || r.title.includes("Regulatory"))
+    ) {
       addRec(
         "Medium",
-        `Execute Regulatory & Facility Compliance Review in ${facts.market.geography}`,
-        `Verify health, environmental, data security, and operational safety certifications required for commercial deployment in ${facts.market.geography}.`,
+        `Execute Regulatory & Facility Compliance Review in ${geo}`,
+        `Verify health, environmental, data security, and operational safety certifications required for commercial deployment in ${geo}.`,
         "Next 90 Days"
       );
     }
 
-    if (scores.scalability.score < 70 && !recommendations.some((r) => r.title.includes("Deployment") || r.title.includes("Onboarding"))) {
+    if (
+      scores.scalability.score < 70 &&
+      !recommendations.some((r) => r.title.includes("Deployment") || r.title.includes("Onboarding"))
+    ) {
       if (isHardwareOrDeepTech) {
         addRec(
           "Medium",

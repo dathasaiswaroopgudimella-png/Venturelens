@@ -7,6 +7,29 @@ import {
   ScoringEquation,
   ScoringEquationComponent,
 } from "@/types";
+import { isNonCommercialSubmission } from "@/lib/utils/clean-inputs";
+
+function makeDimScore(
+  score: number,
+  weight: number,
+  confidence: number,
+  keyIssues: string[],
+  suggestions: string[],
+  reasoning: string
+): DimensionScore {
+  return {
+    score,
+    rawScore: score,
+    evidenceConfidence: confidence,
+    weight: weight / 100,
+    contribution: Number(((score * weight) / 100).toFixed(1)),
+    confidence: confidence >= 75 ? "High" : confidence >= 50 ? "Medium" : "Low",
+    evidenceLevel: Math.round(confidence / 10),
+    keyIssues,
+    suggestions,
+    reasoning,
+  };
+}
 
 export class ScoringEngine {
   calculate(
@@ -14,15 +37,7 @@ export class ScoringEngine {
     ruleOutcomes: RuleOutcome[],
     answers: QuestionnaireAnswers
   ): { scores: VentureScores; equation: ScoringEquation } {
-    const icp = facts.customer.icp || answers.targetCustomer || "target buyers";
-    const probDesc = facts.problem.description || answers.problemSolved || "identified problem";
-    const tag0 = facts.market.industryTags[0] || "Target Market";
-    const comps = facts.competition.competitorList.join(", ") || answers.competitors || "existing alternatives";
-
-    const getRuleStatus = (id: string) => {
-      const rule = ruleOutcomes.find((r) => r.id === id);
-      return rule ? rule.status : "PASS";
-    };
+    const isNonCommercial = isNonCommercialSubmission(answers.idea, answers);
 
     const getRuleEffect = (id: string) => {
       const rule = ruleOutcomes.find((r) => r.id === id);
@@ -32,111 +47,240 @@ export class ScoringEngine {
     const valText = (answers.currentValidation || "").toLowerCase();
     const teamText = (answers.teamBackground || "").toLowerCase();
     const tamText = (answers.tamEstimate || "").toLowerCase();
+    const probText = (answers.problemSolved || "").toLowerCase();
+    const custText = (answers.targetCustomer || "").toLowerCase();
+    const priceText = (answers.pricingStrategy || "").toLowerCase();
+    const moatText = (answers.differentiation || "").toLowerCase();
 
-    // 1. Evidence Verification Analyzers
-    // Check if traction has real verifiable proof (paying customers, signed LOIs, named pilots)
-    let tractionConfidence = 35; // Default unverified claim confidence
-    let tractionRaw = 40;
-    let tractionEvidenceRationale = "Unverified early concept without concrete pilot data.";
+    // ─── NON-COMMERCIAL / NONSENSE THESIS BRANCH ──────────────────────────────
+    if (isNonCommercial) {
+      const ncComponents: ScoringEquationComponent[] = [
+        {
+          dimension: "Problem Urgency & Severity",
+          weight: 20,
+          rawScore: 8,
+          evidenceConfidence: 10,
+          adjustedScore: 6,
+          weightedContribution: 1.2,
+          evidenceRationale: "No identifiable commercial problem or operational friction defined.",
+        },
+        {
+          dimension: "Target Customer (ICP) & Access",
+          weight: 15,
+          rawScore: 6,
+          evidenceConfidence: 10,
+          adjustedScore: 5,
+          weightedContribution: 0.8,
+          evidenceRationale: "No addressable commercial customer segment with willingness-to-pay.",
+        },
+        {
+          dimension: "Market Size & Timing (TAM)",
+          weight: 15,
+          rawScore: 5,
+          evidenceConfidence: 5,
+          adjustedScore: 4,
+          weightedContribution: 0.6,
+          evidenceRationale: "Zero addressable commercial market size identified.",
+        },
+        {
+          dimension: "Business Model & Unit Economics",
+          weight: 15,
+          rawScore: 6,
+          evidenceConfidence: 10,
+          adjustedScore: 5,
+          weightedContribution: 0.8,
+          evidenceRationale: "No revenue mechanism, unit economics, or pricing model.",
+        },
+        {
+          dimension: "Competitive Advantage & Moat",
+          weight: 10,
+          rawScore: 8,
+          evidenceConfidence: 10,
+          adjustedScore: 6,
+          weightedContribution: 0.6,
+          evidenceRationale: "No defensible intellectual property, data moat, or workflow lock-in.",
+        },
+        {
+          dimension: "Team-Domain Execution Fit",
+          weight: 10,
+          rawScore: 15,
+          evidenceConfidence: 15,
+          adjustedScore: 10,
+          weightedContribution: 1.0,
+          evidenceRationale: "Founding credentials not applicable to commercial venture thesis.",
+        },
+        {
+          dimension: "Traction & Empirical Evidence",
+          weight: 10,
+          rawScore: 5,
+          evidenceConfidence: 5,
+          adjustedScore: 4,
+          weightedContribution: 0.4,
+          evidenceRationale: "Zero commercial traction, pilots, or customer validation.",
+        },
+        {
+          dimension: "Structural & Regulatory Risk",
+          weight: 5,
+          rawScore: 10,
+          evidenceConfidence: 10,
+          adjustedScore: 8,
+          weightedContribution: 0.4,
+          evidenceRationale: "Severe viability risk: Non-commercial submission.",
+        },
+      ];
+
+      const ncOverall = 6;
+      const ncScores: VentureScores = {
+        problem: makeDimScore(6, 20, 10, ["No commercial problem defined"], ["Define an acute customer pain point"], "No solvable commercial problem identified."),
+        customer: makeDimScore(5, 15, 10, ["No paying customer segment"], ["Identify target economic buyers"], "No paying target customer segment."),
+        market: makeDimScore(4, 15, 5, ["Zero addressable market"], ["Research industry market sizing"], "Zero addressable commercial market."),
+        businessModel: makeDimScore(5, 15, 10, ["No revenue model"], ["Define SaaS or transaction pricing"], "No monetization model or pricing logic."),
+        competition: makeDimScore(6, 10, 10, ["No differentiation"], ["Build defensible moat"], "No defensible competitive advantage."),
+        execution: makeDimScore(10, 10, 15, ["Execution undefined"], ["Assemble relevant team"], "Non-commercial execution scope."),
+        differentiation: makeDimScore(6, 10, 10, ["No defensibility"], ["Formulate IP/data moat"], "No proprietary differentiation."),
+        scalability: makeDimScore(4, 10, 5, ["Non-scalable"], ["Re-evaluate venture model"], "Zero venture scalability potential."),
+        investorReadiness: makeDimScore(5, 10, 5, ["Ineligible for investment"], ["Formulate validated business thesis"], "Submission does not meet venture criteria."),
+        risk: makeDimScore(8, 5, 10, ["Extreme feasibility risk"], ["Halt and discover real customer problem"], "Extreme viability risk: Non-business submission."),
+        overallScore: ncOverall,
+      };
+
+      const ncEquation: ScoringEquation = {
+        rawScoreTotal: 63,
+        overallEvidenceConfidence: 10,
+        finalAdjustedScore: ncOverall,
+        formulaDescription: "Adjusted Score = Σ [ Raw Score × (0.55 + 0.45 × (Confidence / 100)) × Weight% ]",
+        components: ncComponents,
+      };
+
+      return { scores: ncScores, equation: ncEquation };
+    }
+
+    // ─── COMMERCIAL VENTURE EVALUATION ────────────────────────────────────────
+
+    // 1. Traction & Empirical Evidence
+    let tractionConfidence = 25;
+    let tractionRaw = 28;
+    let tractionEvidenceRationale = "Early conceptual stage with unverified customer demand.";
 
     if (/paying|\$\d+|₹\d+|arr|mrr|revenue|active contracts/i.test(valText)) {
-      tractionConfidence = 92;
-      tractionRaw = 90;
-      tractionEvidenceRationale = "Verified revenue / paying customer metrics provided.";
-    } else if (/loi|signed letter|pilot agreement|contract/i.test(valText)) {
-      tractionConfidence = 80;
-      tractionRaw = 75;
-      tractionEvidenceRationale = "Verifiable Letters of Intent (LOIs) or pilot agreements referenced.";
-    } else if (/waitlist|\d+\s*(users|signups|beta)/i.test(valText)) {
-      tractionConfidence = 60;
+      tractionConfidence = 95;
+      tractionRaw = 92;
+      tractionEvidenceRationale = "Verified paying customers or recurring ARR milestones documented.";
+    } else if (/loi|signed letter|pilot agreement|contract|partnership/i.test(valText)) {
+      tractionConfidence = 82;
+      tractionRaw = 78;
+      tractionEvidenceRationale = "Signed Letters of Intent (LOIs) or commercial pilot agreements referenced.";
+    } else if (/waitlist|\d+\s*(users|signups|beta|downloads)/i.test(valText)) {
+      tractionConfidence = 62;
       tractionRaw = 58;
-      tractionEvidenceRationale = "Top-of-funnel waitlist / beta user interest without revenue validation.";
-    } else if (/interview|\d+\s*conversations/i.test(valText)) {
+      tractionEvidenceRationale = "Top-of-funnel waitlist or beta user signups without paid validation.";
+    } else if (/interview|\d+\s*conversations|survey/i.test(valText)) {
       tractionConfidence = 50;
-      tractionRaw = 50;
-      tractionEvidenceRationale = "Qualitative discovery interviews completed; pending commercial validation.";
+      tractionRaw = 48;
+      tractionEvidenceRationale = "Qualitative discovery interviews completed; pending commercial pilots.";
+    } else if (valText.length > 25 && !/none|not yet|idea stage/i.test(valText)) {
+      tractionConfidence = 40;
+      tractionRaw = 38;
+      tractionEvidenceRationale = "Initial working prototype or validation efforts described.";
     }
 
-    // Check team domain credibility
-    let teamConfidence = 45;
-    let teamRaw = 50;
-    let teamEvidenceRationale = "Team background lacks specific industry credentials in target sector.";
+    // 2. Team & Domain Execution Fit
+    let teamConfidence = 40;
+    let teamRaw = 45;
+    let teamEvidenceRationale = "Founding credentials lack specific industry track record in target vertical.";
 
-    if (/founder|exited|scaled|vp|director|\d+\+?\s*years/i.test(teamText) && /(lead|engineer|health|finance|ai|domain)/i.test(teamText)) {
-      teamConfidence = 90;
-      teamRaw = 88;
-      teamEvidenceRationale = "Proven domain leadership and prior track record in target vertical.";
-    } else if (/engineer|developer|product manager|consultant/i.test(teamText)) {
-      teamConfidence = 70;
-      teamRaw = 68;
-      teamEvidenceRationale = "Technical capability present; supplementary industry domain advisors recommended.";
-    } else if (/student|beginner|early/i.test(teamText) || teamText.length < 25) {
-      teamConfidence = 35;
-      teamRaw = 42;
-      teamEvidenceRationale = "Early-career team with execution risk in complex regulated environments.";
+    if (
+      /founder|exited|scaled|vp|director|principal|\d+\+?\s*years/i.test(teamText) &&
+      /(lead|engineer|health|finance|ai|thermal|infrastructure|cooling|security|data)/i.test(teamText)
+    ) {
+      teamConfidence = 92;
+      teamRaw = 90;
+      teamEvidenceRationale = "Proven domain leadership, technical depth, and industry track record.";
+    } else if (/engineer|developer|product manager|consultant|architect|scientist/i.test(teamText)) {
+      teamConfidence = 72;
+      teamRaw = 70;
+      teamEvidenceRationale = "Technical execution capability present; vertical industry advisors recommended.";
+    } else if (/student|junior|beginner/i.test(teamText) || teamText.length < 20) {
+      teamConfidence = 30;
+      teamRaw = 35;
+      teamEvidenceRationale = "Early-stage team with execution risk in complex competitive environments.";
     }
 
-    // Check TAM grounding
-    let marketConfidence = 50;
-    let marketRaw = 60;
-    let marketEvidenceRationale = "Top-down market sizing estimate without bottom-up calculation.";
+    // 3. Market Size & Timing (TAM)
+    let marketConfidence = 45;
+    let marketRaw = 50;
+    let marketEvidenceRationale = "Top-down market sizing estimate without bottom-up unit breakdown.";
 
-    if (/\$?\d+b|\$?\d+m|₹\d+\s*(crore|cr)/i.test(tamText) && (answers.geography?.length || 0) > 5) {
-      marketConfidence = 75;
-      marketRaw = facts.market.tamPotential === "Massive" ? 88 : facts.market.tamPotential === "Large" ? 78 : 65;
+    if (/\$?\d+b|\$?\d+m|₹\d+\s*(crore|cr)/i.test(tamText) && (answers.geography?.length || 0) > 3) {
+      marketConfidence = 80;
+      marketRaw = facts.market.tamPotential === "Large" ? 88 : 75;
       marketEvidenceRationale = "Quantified TAM sizing with defined geographic boundaries.";
-    } else if (tamText.length > 5) {
+    } else if (tamText.length > 10) {
       marketConfidence = 55;
       marketRaw = 60;
       marketEvidenceRationale = "Estimated addressable market requires bottom-up unit-economics verification.";
     }
 
-    // Problem Evidence
-    let problemConfidence = answers.problemSolved.length > 50 ? 85 : answers.problemSolved.length > 25 ? 65 : 45;
-    let problemRaw = 60;
+    // 4. Problem Urgency & Severity
+    let problemConfidence = probText.length > 60 ? 88 : probText.length > 25 ? 68 : 38;
+    let problemRaw = 55;
     if (facts.problem.frequency === "Daily") problemRaw += 18;
     else if (facts.problem.frequency === "Weekly") problemRaw += 8;
-    else if (facts.problem.frequency === "Rarely") problemRaw -= 15;
+    else if (facts.problem.frequency === "Rarely") problemRaw -= 20;
 
-    if (facts.problem.painSeverity === "Critical") problemRaw += 15;
-    else if (facts.problem.painSeverity === "Convenience") problemRaw -= 18;
+    if (facts.problem.painSeverity === "Critical") problemRaw += 18;
+    else if (facts.problem.painSeverity === "Convenience") problemRaw -= 22;
+
     problemRaw += getRuleEffect("RULE_07_LOW_PAIN");
-    problemRaw = Math.max(20, Math.min(98, problemRaw));
+    problemRaw += getRuleEffect("RULE_10_NO_PROBLEM");
+    problemRaw = Math.max(15, Math.min(98, problemRaw));
 
-    // Customer Evidence
-    let customerConfidence = answers.targetCustomer.length > 40 ? 80 : 55;
-    let customerRaw = 60;
-    if (facts.customer.icp.length > 30) customerRaw += 15;
+    // 5. Customer (ICP) & Access
+    let customerConfidence = custText.length > 45 ? 85 : custText.length > 20 ? 65 : 35;
+    let customerRaw = 55;
+    if (facts.customer.icp.length > 25 && !/everyone|anyone/i.test(custText)) customerRaw += 18;
     customerRaw += getRuleEffect("RULE_01_PRICE_ICP_MISMATCH");
+    customerRaw += getRuleEffect("RULE_11_NO_CUSTOMER");
     customerRaw += getRuleEffect("RULE_15_ICP_DIST_MISMATCH");
-    customerRaw = Math.max(20, Math.min(98, customerRaw));
+    customerRaw = Math.max(15, Math.min(98, customerRaw));
 
-    // Business Model Evidence
-    let modelConfidence = answers.pricingStrategy.length > 20 ? 80 : 50;
-    let modelRaw = 65;
-    if (facts.businessModel.primaryType === "SaaS" || facts.businessModel.primaryType === "Subscription") modelRaw += 15;
+    // 6. Business Model & Unit Economics
+    let modelConfidence = priceText.length > 20 ? 82 : priceText.length > 10 ? 60 : 35;
+    let modelRaw = 55;
+    if (facts.businessModel.primaryType === "SaaS" || facts.businessModel.primaryType === "Subscription" || facts.businessModel.primaryType === "Licensing") {
+      modelRaw += 18;
+    }
     modelRaw += getRuleEffect("RULE_05_SAAS_ONE_TIME");
-    modelRaw += getRuleEffect("RULE_06_MARGIN_COLLAPSE");
-    modelRaw = Math.max(20, Math.min(98, modelRaw));
+    modelRaw += getRuleEffect("RULE_04_MARKETPLACE_SUPPLY");
+    modelRaw = Math.max(15, Math.min(98, modelRaw));
 
-    // Competition & Moat Evidence
-    let compConfidence = (answers.competitors?.length || 0) > 10 && answers.differentiation.length > 30 ? 80 : 50;
-    let compRaw = 60;
-    if (answers.differentiation.length > 50) compRaw += 18;
-    compRaw += getRuleEffect("RULE_03_BLIND_SPOT");
+    // 7. Competitive Advantage & Moat
+    let compConfidence = (answers.competitors?.length || 0) > 10 && moatText.length > 30 ? 82 : moatText.length > 15 ? 55 : 30;
+    let compRaw = 50;
+    if (moatText.length > 45 && !/none|first mover|dont have/i.test(moatText)) compRaw += 22;
+    compRaw += getRuleEffect("RULE_03_CROWDED_WEAK_MOAT");
     compRaw += getRuleEffect("RULE_14_WEAK_MOAT");
-    compRaw = Math.max(20, Math.min(98, compRaw));
+    compRaw = Math.max(15, Math.min(98, compRaw));
 
-    // Risk Score
+    // 8. Execution & Scalability Risk
     const failRules = ruleOutcomes.filter((r) => r.status === "FAIL");
     const warnRules = ruleOutcomes.filter((r) => r.status === "WARNING");
-    let riskRaw = 80 - (failRules.length * 18) - (warnRules.length * 7);
-    riskRaw = Math.max(20, Math.min(95, riskRaw));
+    let riskRaw = 85 - failRules.length * 18 - warnRules.length * 6;
+    riskRaw = Math.max(15, Math.min(95, riskRaw));
     let riskConfidence = 75;
 
-    // 2. Build Components with Transparent Adjusted Equation
-    // Adjusted Score = Raw Score * (0.55 + 0.45 * (Evidence Confidence / 100))
-    const calcAdjusted = (raw: number, conf: number) => Math.round(raw * (0.55 + 0.45 * (conf / 100)));
+    // Adjusted Equation: Score = Raw Score * (0.55 + 0.45 * (Confidence / 100))
+    const calcAdjusted = (raw: number, conf: number) =>
+      Math.max(8, Math.min(98, Math.round(raw * (0.55 + 0.45 * (conf / 100)))));
+
+    const problemAdjusted = calcAdjusted(problemRaw, problemConfidence);
+    const customerAdjusted = calcAdjusted(customerRaw, customerConfidence);
+    const marketAdjusted = calcAdjusted(marketRaw, marketConfidence);
+    const modelAdjusted = calcAdjusted(modelRaw, modelConfidence);
+    const compAdjusted = calcAdjusted(compRaw, compConfidence);
+    const teamAdjusted = calcAdjusted(teamRaw, teamConfidence);
+    const tractionAdjusted = calcAdjusted(tractionRaw, tractionConfidence);
+    const riskAdjusted = calcAdjusted(riskRaw, riskConfidence);
 
     const components: ScoringEquationComponent[] = [
       {
@@ -144,17 +288,17 @@ export class ScoringEngine {
         weight: 20,
         rawScore: problemRaw,
         evidenceConfidence: problemConfidence,
-        adjustedScore: calcAdjusted(problemRaw, problemConfidence),
-        weightedContribution: Number(((calcAdjusted(problemRaw, problemConfidence) * 20) / 100).toFixed(1)),
-        evidenceRationale: "Evaluates pain severity, operational friction, and daily/weekly frequency.",
+        adjustedScore: problemAdjusted,
+        weightedContribution: Number(((problemAdjusted * 20) / 100).toFixed(1)),
+        evidenceRationale: "Evaluates pain severity, operational friction, and frequency.",
       },
       {
         dimension: "Target Customer (ICP) & Access",
         weight: 15,
         rawScore: customerRaw,
         evidenceConfidence: customerConfidence,
-        adjustedScore: calcAdjusted(customerRaw, customerConfidence),
-        weightedContribution: Number(((calcAdjusted(customerRaw, customerConfidence) * 15) / 100).toFixed(1)),
+        adjustedScore: customerAdjusted,
+        weightedContribution: Number(((customerAdjusted * 15) / 100).toFixed(1)),
         evidenceRationale: "Measures customer persona specificity and alignment with acquisition channels.",
       },
       {
@@ -162,8 +306,8 @@ export class ScoringEngine {
         weight: 15,
         rawScore: marketRaw,
         evidenceConfidence: marketConfidence,
-        adjustedScore: calcAdjusted(marketRaw, marketConfidence),
-        weightedContribution: Number(((calcAdjusted(marketRaw, marketConfidence) * 15) / 100).toFixed(1)),
+        adjustedScore: marketAdjusted,
+        weightedContribution: Number(((marketAdjusted * 15) / 100).toFixed(1)),
         evidenceRationale: marketEvidenceRationale,
       },
       {
@@ -171,26 +315,26 @@ export class ScoringEngine {
         weight: 15,
         rawScore: modelRaw,
         evidenceConfidence: modelConfidence,
-        adjustedScore: calcAdjusted(modelRaw, modelConfidence),
-        weightedContribution: Number(((calcAdjusted(modelRaw, modelConfidence) * 15) / 100).toFixed(1)),
-        evidenceRationale: "Assesses recurring revenue quality, pricing logic, and gross margin profile.",
+        adjustedScore: modelAdjusted,
+        weightedContribution: Number(((modelAdjusted * 15) / 100).toFixed(1)),
+        evidenceRationale: "Assesses recurring revenue quality, pricing logic, and gross margins.",
       },
       {
         dimension: "Competitive Advantage & Moat",
         weight: 10,
         rawScore: compRaw,
         evidenceConfidence: compConfidence,
-        adjustedScore: calcAdjusted(compRaw, compConfidence),
-        weightedContribution: Number(((calcAdjusted(compRaw, compConfidence) * 10) / 100).toFixed(1)),
-        evidenceRationale: "Evaluates defensibility against incumbents, switching costs, and replication speed.",
+        adjustedScore: compAdjusted,
+        weightedContribution: Number(((compAdjusted * 10) / 100).toFixed(1)),
+        evidenceRationale: "Evaluates defensibility against incumbents and replication speed.",
       },
       {
         dimension: "Team-Domain Execution Fit",
         weight: 10,
         rawScore: teamRaw,
         evidenceConfidence: teamConfidence,
-        adjustedScore: calcAdjusted(teamRaw, teamConfidence),
-        weightedContribution: Number(((calcAdjusted(teamRaw, teamConfidence) * 10) / 100).toFixed(1)),
+        adjustedScore: teamAdjusted,
+        weightedContribution: Number(((teamAdjusted * 10) / 100).toFixed(1)),
         evidenceRationale: teamEvidenceRationale,
       },
       {
@@ -198,217 +342,55 @@ export class ScoringEngine {
         weight: 10,
         rawScore: tractionRaw,
         evidenceConfidence: tractionConfidence,
-        adjustedScore: calcAdjusted(tractionRaw, tractionConfidence),
-        weightedContribution: Number(((calcAdjusted(tractionRaw, tractionConfidence) * 10) / 100).toFixed(1)),
+        adjustedScore: tractionAdjusted,
+        weightedContribution: Number(((tractionAdjusted * 10) / 100).toFixed(1)),
         evidenceRationale: tractionEvidenceRationale,
       },
       {
-        dimension: "Execution & Regulatory Risk",
+        dimension: "Structural & Regulatory Risk",
         weight: 5,
         rawScore: riskRaw,
         evidenceConfidence: riskConfidence,
-        adjustedScore: calcAdjusted(riskRaw, riskConfidence),
-        weightedContribution: Number(((calcAdjusted(riskRaw, riskConfidence) * 5) / 100).toFixed(1)),
-        evidenceRationale: "Flags critical failure rules, compliance barriers, and liability exposures.",
+        adjustedScore: riskAdjusted,
+        weightedContribution: Number(((riskAdjusted * 5) / 100).toFixed(1)),
+        evidenceRationale: "Consolidates deterministic rule flags and structural adoption barriers.",
       },
     ];
 
-    const rawScoreTotal = Math.round(
-      components.reduce((sum, c) => sum + (c.rawScore * c.weight) / 100, 0)
-    );
-
-    const overallEvidenceConfidence = Math.round(
-      components.reduce((sum, c) => sum + (c.evidenceConfidence * c.weight) / 100, 0)
-    );
-
-    const finalAdjustedScore = Math.min(
-      98,
-      Math.max(
-        15,
+    const overallScore = Math.max(
+      8,
+      Math.min(
+        98,
         Math.round(components.reduce((sum, c) => sum + c.weightedContribution, 0))
       )
     );
 
-    const scoringEquation: ScoringEquation = {
-      rawScoreTotal,
+    const scores: VentureScores = {
+      problem: makeDimScore(problemAdjusted, 20, problemConfidence, [facts.problem.frequency], ["Prioritize high-severity pain point"], `Problem severity (${facts.problem.painSeverity}) with ${facts.problem.frequency.toLowerCase()} frequency.`),
+      customer: makeDimScore(customerAdjusted, 15, customerConfidence, [facts.customer.icp], ["Narrow target beachhead"], `Target ICP (${facts.customer.icp}) evaluated for accessibility and willingness-to-pay.`),
+      market: makeDimScore(marketAdjusted, 15, marketConfidence, [facts.market.tamPotential], ["Quantify bottom-up TAM"], marketEvidenceRationale),
+      businessModel: makeDimScore(modelAdjusted, 15, modelConfidence, [facts.businessModel.primaryType], ["Optimize gross margins and LTV"], `Monetization model (${facts.businessModel.primaryType}) and pricing structure.`),
+      competition: makeDimScore(compAdjusted, 10, compConfidence, facts.competition.competitorList, ["Build proprietary workflow moat"], "Defensibility moat and competitive barrier profile."),
+      execution: makeDimScore(teamAdjusted, 10, teamConfidence, [facts.execution.complexity], ["Recruit domain veterans"], teamEvidenceRationale),
+      differentiation: makeDimScore(compAdjusted, 10, compConfidence, [], ["Strengthen IP/data moat"], "Defensibility moat and competitive barrier profile."),
+      scalability: makeDimScore(Math.round((marketAdjusted + modelAdjusted) / 2), 10, Math.round((marketConfidence + modelConfidence) / 2), [], ["Accelerate distribution loop"], "Market scalability and margin leverage profile."),
+      investorReadiness: makeDimScore(overallScore, 10, Math.round((problemConfidence + tractionConfidence) / 2), [], ["Prepare institutional data room"], `Overall venture readiness score of ${overallScore}/100.`),
+      risk: makeDimScore(riskAdjusted, 5, riskConfidence, failRules.map((f) => f.name), ["Mitigate identified failure gates"], `Consolidated rule risk: ${failRules.length} critical fails, ${warnRules.length} warnings.`),
+      overallScore,
+    };
+
+    const overallEvidenceConfidence = Math.round(
+      components.reduce((sum, c) => sum + c.evidenceConfidence * (c.weight / 100), 0)
+    );
+
+    const equation: ScoringEquation = {
+      rawScoreTotal: components.reduce((sum, c) => sum + c.rawScore, 0),
       overallEvidenceConfidence,
-      finalAdjustedScore,
-      formulaDescription: "Adjusted Score = Σ [ Dimension Weight × Raw Score × (0.55 + 0.45 × Evidence Confidence) ]",
+      finalAdjustedScore: overallScore,
+      formulaDescription: "Adjusted Score = Σ [ Raw Score × (0.55 + 0.45 × (Confidence / 100)) × Weight% ]",
       components,
     };
 
-    // Construct DimensionScores
-    const problem: DimensionScore = {
-      score: components[0].adjustedScore,
-      rawScore: components[0].rawScore,
-      evidenceConfidence: components[0].evidenceConfidence,
-      weight: 0.20,
-      contribution: components[0].weightedContribution,
-      confidence: problemConfidence >= 75 ? "High" : "Medium",
-      evidenceLevel: Math.round(problemConfidence / 10),
-      keyIssues:
-        getRuleStatus("RULE_07_LOW_PAIN") !== "PASS"
-          ? [`Problem severity for ${icp} is classified as convenience-level or low frequency.`]
-          : [],
-      suggestions: [
-        `Conduct 15 structured problem discovery interviews with ${icp} to quantify workflow hours lost.`,
-        `Benchmark problem urgency against existing manual workarounds in ${tag0}.`,
-      ],
-    };
-
-    const customer: DimensionScore = {
-      score: components[1].adjustedScore,
-      rawScore: components[1].rawScore,
-      evidenceConfidence: components[1].evidenceConfidence,
-      weight: 0.15,
-      contribution: components[1].weightedContribution,
-      confidence: customerConfidence >= 75 ? "High" : "Medium",
-      evidenceLevel: Math.round(customerConfidence / 10),
-      keyIssues: [
-        ...(getRuleStatus("RULE_01_PRICE_ICP_MISMATCH") !== "PASS"
-          ? [`High pricing threshold paired with price-sensitive segment (${icp}).`]
-          : []),
-        ...(getRuleStatus("RULE_15_ICP_DIST_MISMATCH") !== "PASS"
-          ? [`Distribution channel mismatch for reaching ${icp}.`]
-          : []),
-      ],
-      suggestions: [
-        `Segment ${icp} into early adopter beachheads with shortest sales cycles.`,
-        `Verify economic buyer willingness-to-pay before extensive product development.`,
-      ],
-    };
-
-    const market: DimensionScore = {
-      score: components[2].adjustedScore,
-      rawScore: components[2].rawScore,
-      evidenceConfidence: components[2].evidenceConfidence,
-      weight: 0.15,
-      contribution: components[2].weightedContribution,
-      confidence: marketConfidence >= 75 ? "High" : "Medium",
-      evidenceLevel: Math.round(marketConfidence / 10),
-      keyIssues: [
-        ...(getRuleStatus("RULE_02_TINY_TAM") !== "PASS" ? [`Restricted TAM for ${tag0} in ${facts.market.geography}.`] : []),
-        ...(getRuleStatus("RULE_09_GEOGRAPHY_GAP") !== "PASS" ? [`Vague launch geography without a focused beachhead territory.`] : []),
-      ],
-      suggestions: [
-        `Build a bottom-up TAM sizing model based on target accounts × average contract value.`,
-        `Establish early market dominance in a focused regional territory before international expansion.`,
-      ],
-    };
-
-    const businessModel: DimensionScore = {
-      score: components[3].adjustedScore,
-      rawScore: components[3].rawScore,
-      evidenceConfidence: components[3].evidenceConfidence,
-      weight: 0.15,
-      contribution: components[3].weightedContribution,
-      confidence: modelConfidence >= 75 ? "High" : "Medium",
-      evidenceLevel: Math.round(modelConfidence / 10),
-      keyIssues: [
-        ...(getRuleStatus("RULE_05_SAAS_ONE_TIME") !== "PASS" ? ["One-time transaction model limits customer lifetime value (LTV)."] : []),
-        ...(getRuleStatus("RULE_06_MARGIN_COLLAPSE") !== "PASS" ? ["High cost-of-goods-sold (COGS) threatens unit economics scalability."] : []),
-      ],
-      suggestions: [
-        `Structure recurring subscription or usage-based tiers to maximize net revenue retention.`,
-        `Model CAC payback period target under 12 months for sustainable payback.`,
-      ],
-    };
-
-    const competition: DimensionScore = {
-      score: components[4].adjustedScore,
-      rawScore: components[4].rawScore,
-      evidenceConfidence: components[4].evidenceConfidence,
-      weight: 0.10,
-      contribution: components[4].weightedContribution,
-      confidence: compConfidence >= 75 ? "High" : "Medium",
-      evidenceLevel: Math.round(compConfidence / 10),
-      keyIssues: [
-        ...(getRuleStatus("RULE_03_BLIND_SPOT") !== "PASS" ? [`Direct competitor overlap in ${tag0} requires differentiation defense.`] : []),
-        ...(getRuleStatus("RULE_14_WEAK_MOAT") !== "PASS" ? [`Moat relies on features easily copied by incumbents (${comps}).`] : []),
-      ],
-      suggestions: [
-        `Build proprietary data network effects or deep workflow integration moats.`,
-        `Document competitor feature matrix and position on 10x speed or cost advantage.`,
-      ],
-    };
-
-    const execution: DimensionScore = {
-      score: components[5].adjustedScore,
-      rawScore: components[5].rawScore,
-      evidenceConfidence: components[5].evidenceConfidence,
-      weight: 0.10,
-      contribution: components[5].weightedContribution,
-      confidence: teamConfidence >= 75 ? "High" : "Medium",
-      evidenceLevel: Math.round(teamConfidence / 10),
-      keyIssues:
-        getRuleStatus("RULE_08_SOLO_FOUNDER") !== "PASS"
-          ? ["Solo founder structure carries single-point execution bottlenecks."]
-          : teamConfidence < 50
-          ? ["Team lacks specialized industry track record in target vertical."]
-          : [],
-      suggestions: [
-        `Recruit domain-expert advisors or technical co-founders with direct industry relationships.`,
-        `Define 90-day milestone execution roadmap with clear pilot deliverables.`,
-      ],
-    };
-
-    const risk: DimensionScore = {
-      score: components[7].adjustedScore,
-      rawScore: components[7].rawScore,
-      evidenceConfidence: components[7].evidenceConfidence,
-      weight: 0.05,
-      contribution: components[7].weightedContribution,
-      confidence: "High",
-      evidenceLevel: 8,
-      keyIssues: failRules.map((r) => `${r.name}: ${r.message}`),
-      suggestions: [
-        `Address critical validation failures before committing full-scale development capital.`,
-        `Establish formal pilot milestone gates to manage cash burn rate.`,
-      ],
-    };
-
-    const differentiation: DimensionScore = {
-      score: components[4].adjustedScore,
-      confidence: compConfidence >= 75 ? "High" : "Medium",
-      evidenceLevel: Math.round(compConfidence / 10),
-      keyIssues: [],
-      suggestions: [`Strengthen proprietary IP, workflow lock-in, and switching barriers against ${comps}.`],
-    };
-
-    const scalability: DimensionScore = {
-      score: Math.round((market.score + businessModel.score) / 2),
-      confidence: "High",
-      evidenceLevel: 7,
-      keyIssues: [],
-      suggestions: [`Automate digital onboarding loops to scale account volume without headcount overhead.`],
-    };
-
-    const investorReadiness: DimensionScore = {
-      score: finalAdjustedScore,
-      confidence: overallEvidenceConfidence >= 75 ? "High" : "Medium",
-      evidenceLevel: Math.round(overallEvidenceConfidence / 10),
-      keyIssues: failRules.map((r) => r.message),
-      suggestions: [
-        `Prepare institutional evidence data room with pilot LOIs and cohort retention tracking.`,
-        `Execute recommended 14-day validation experiment prior to seed round pitching.`,
-      ],
-    };
-
-    return {
-      scores: {
-        problem,
-        customer,
-        market,
-        competition,
-        businessModel,
-        execution,
-        risk,
-        differentiation,
-        scalability,
-        investorReadiness,
-        overallScore: finalAdjustedScore,
-      },
-      equation: scoringEquation,
-    };
+    return { scores, equation };
   }
 }

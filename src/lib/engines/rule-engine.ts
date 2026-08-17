@@ -1,10 +1,10 @@
 import { ExtractedFacts, RuleOutcome, QuestionnaireAnswers } from "@/types";
+import { isNonCommercialSubmission } from "@/lib/utils/clean-inputs";
 
 export class RuleEngine {
   evaluate(facts: ExtractedFacts, answers: QuestionnaireAnswers): RuleOutcome[] {
     const outcomes: RuleOutcome[] = [];
 
-    // Helper to add outcomes
     const addRule = (
       id: string,
       name: string,
@@ -14,6 +14,27 @@ export class RuleEngine {
     ) => {
       outcomes.push({ id, name, status, message, impactScoreEffect: effect });
     };
+
+    const isNonCommercial = isNonCommercialSubmission(answers.idea, answers);
+
+    // 0. Non-Commercial Thesis Gate (Critical Filter)
+    if (isNonCommercial) {
+      addRule(
+        "RULE_00_NON_COMMERCIAL_THESIS",
+        "Commercial Venture Validity Gate",
+        "FAIL",
+        "The submission describes a personal activity or informal statement rather than a viable commercial venture.",
+        -40
+      );
+    } else {
+      addRule(
+        "RULE_00_NON_COMMERCIAL_THESIS",
+        "Commercial Venture Validity Gate",
+        "PASS",
+        "Submission describes an identifiable commercial business proposition.",
+        0
+      );
+    }
 
     // 1. Enterprise Pricing for Consumer Users Mismatch
     const isB2C =
@@ -26,7 +47,7 @@ export class RuleEngine {
       answers.pricingStrategy.toLowerCase().includes("enterprise") ||
       answers.pricingStrategy.toLowerCase().includes("high ticket") ||
       answers.pricingStrategy.toLowerCase().includes("thousands") ||
-      /\$?([5-9]\d\d|\d{4,})\b/.test(answers.pricingStrategy); // Matches prices >= $500
+      /\$?([5-9]\d\d|\d{4,})\b/.test(answers.pricingStrategy);
 
     if (isB2C && isEnterprisePricing) {
       addRule(
@@ -189,6 +210,7 @@ export class RuleEngine {
 
     // 7. Low Pain Severity / Frequency
     const isLowPain =
+      isNonCommercial ||
       facts.problem.painSeverity === "Convenience" ||
       facts.problem.frequency === "Rarely";
 
@@ -212,6 +234,7 @@ export class RuleEngine {
 
     // 8. Missing Customer Validation
     const hasNoValidation =
+      isNonCommercial ||
       answers.currentValidation.toLowerCase().includes("none") ||
       answers.currentValidation.toLowerCase().includes("no validation") ||
       answers.currentValidation.toLowerCase().includes("not yet") ||
@@ -238,7 +261,6 @@ export class RuleEngine {
     // 9. Geography Market Gaps
     const hasUnspecifiedGeography =
       answers.geography.toLowerCase().includes("unspecified") ||
-      answers.geography.toLowerCase().includes("global") ||
       answers.geography.length < 4;
 
     if (hasUnspecifiedGeography) {
@@ -254,99 +276,94 @@ export class RuleEngine {
         "RULE_09_GEOGRAPHY_GAP",
         "Vague Geographic Targeting",
         "PASS",
-        "Target geographic markets are clearly defined.",
+        "Defined launch geography supports targeted customer acquisition.",
         0
       );
     }
 
-    // 10. High Switching Cost for First-Time Users
-    const hasSwitchingCostBarriers = facts.market.adoptionBarriers.some(
-      (b) =>
-        b.toLowerCase().includes("switching") ||
-        b.toLowerCase().includes("migration") ||
-        b.toLowerCase().includes("cost")
-    );
-    const isTargetingFirstTimeUsers =
-      answers.targetCustomer.toLowerCase().includes("first time") ||
-      answers.targetCustomer.toLowerCase().includes("new") ||
-      answers.targetCustomer.toLowerCase().includes("non-user");
+    // 10. Missing or Vague Problem Statement
+    const hasNoProblem =
+      isNonCommercial ||
+      answers.problemSolved.length < 15 ||
+      answers.problemSolved.toLowerCase().includes("none") ||
+      answers.problemSolved.toLowerCase().includes("no problem");
 
-    if (hasSwitchingCostBarriers && isTargetingFirstTimeUsers) {
+    if (hasNoProblem) {
       addRule(
-        "RULE_10_SWITCHING_COST_MISMATCH",
-        "Contradictory Customer Adoption Strategy",
-        "WARNING",
-        "Targeting first-time users while declaring high switching costs as a barrier is logically inconsistent.",
-        -10
+        "RULE_10_NO_PROBLEM",
+        "Problem Statement Deficit",
+        "FAIL",
+        "No clear or acute customer problem is defined, creating severe risk of product-market misalignment.",
+        -25
       );
     } else {
       addRule(
-        "RULE_10_SWITCHING_COST_MISMATCH",
-        "Contradictory Customer Adoption Strategy",
+        "RULE_10_NO_PROBLEM",
+        "Problem Statement Deficit",
         "PASS",
-        "Customer segment adoption expectations are structurally consistent.",
+        "Clear operational or consumer problem is articulated.",
         0
       );
     }
 
-    // 11. Transaction Model with Low Frequency
-    const isTransactional =
-      facts.businessModel.primaryType === "Transaction" ||
-      answers.revenueModel.toLowerCase().includes("transaction");
+    // 11. Missing Target Customer / ICP
+    const hasNoCustomer =
+      isNonCommercial ||
+      answers.targetCustomer.length < 8 ||
+      /^(everyone|anyone|all people|nobody|none)$/i.test(answers.targetCustomer.trim());
 
-    if (isTransactional && facts.problem.frequency === "Rarely") {
+    if (hasNoCustomer) {
       addRule(
-        "RULE_11_TRANSACTION_LOW_FREQ",
-        "Low Frequency Transactional Risk",
-        "WARNING",
-        "A transactional revenue model paired with rare problem frequency results in extremely high CAC-to-LTV risk.",
-        -12
+        "RULE_11_NO_CUSTOMER",
+        "Target Customer Specificity Gap",
+        "FAIL",
+        "Target customer segment is overly broad ('everyone') or undefined, preventing effective go-to-market execution.",
+        -20
       );
     } else {
       addRule(
-        "RULE_11_TRANSACTION_LOW_FREQ",
-        "Low Frequency Transactional Risk",
+        "RULE_11_NO_CUSTOMER",
+        "Target Customer Specificity Gap",
         "PASS",
-        "Monetization model frequency matches user pain frequency.",
+        "Identifiable target buyer segment defined.",
         0
       );
     }
 
-    // 12. SaaS Enterprise without Outbound Sales
-    const isEnterpriseSaaS =
+    // 12. Enterprise Sales Gap
+    const hasEnterpriseICP =
       answers.targetCustomer.toLowerCase().includes("enterprise") ||
-      answers.targetCustomer.toLowerCase().includes("b2b") ||
-      (answers.targetCustomer.toLowerCase().includes("corporate") && isSaaSOrSub);
-
+      answers.targetCustomer.toLowerCase().includes("corporate") ||
+      answers.targetCustomer.toLowerCase().includes("b2b");
     const hasOutboundSales =
       answers.distributionChannel.toLowerCase().includes("sales") ||
       answers.distributionChannel.toLowerCase().includes("outbound") ||
       answers.distributionChannel.toLowerCase().includes("direct") ||
-      answers.distributionChannel.toLowerCase().includes("cold");
+      answers.distributionChannel.toLowerCase().includes("partner");
 
-    if (isEnterpriseSaaS && !hasOutboundSales) {
+    if (hasEnterpriseICP && !hasOutboundSales && !isNonCommercial) {
       addRule(
         "RULE_12_ENTERPRISE_SALES_GAP",
-        "Enterprise GTM Distribution Gap",
+        "Enterprise GTM Misalignment",
         "WARNING",
-        "Selling enterprise B2B software typically requires a high-touch direct/outbound sales motion, which is not mentioned.",
-        -10
+        "B2B Enterprise buyers require high-touch direct sales motions, which are currently omitted from GTM strategy.",
+        -12
       );
     } else {
       addRule(
         "RULE_12_ENTERPRISE_SALES_GAP",
-        "Enterprise GTM Distribution Gap",
+        "Enterprise GTM Misalignment",
         "PASS",
-        "Go-To-Market distribution is aligned with target customer scale.",
+        "Enterprise customer acquisition motion is supported by direct outbound or partnership channels.",
         0
       );
     }
 
-    // 13. Regulatory Barriers without Compliance
+    // 13. Regulatory & Compliance Risk
     const hasRegulatoryBarriers = facts.market.adoptionBarriers.some(
       (b) =>
-        b.toLowerCase().includes("regulation") ||
         b.toLowerCase().includes("compliance") ||
+        b.toLowerCase().includes("regulatory") ||
         b.toLowerCase().includes("legal") ||
         b.toLowerCase().includes("fda")
     );
@@ -376,7 +393,7 @@ export class RuleEngine {
     }
 
     // 14. Defensibility/Moat Deficit
-    if (hasWeakMoat) {
+    if (hasWeakMoat && !isNonCommercial) {
       addRule(
         "RULE_14_WEAK_MOAT",
         "Defensibility Deficit",
@@ -395,7 +412,7 @@ export class RuleEngine {
     }
 
     // 15. Inconsistent ICP vs Distribution
-    const isEnterpriseICP =
+    const isEnterpriseBuyer =
       answers.targetCustomer.toLowerCase().includes("enterprise") ||
       answers.targetCustomer.toLowerCase().includes("fortune 500");
     const isViralDistribution =
@@ -404,7 +421,7 @@ export class RuleEngine {
       answers.distributionChannel.toLowerCase().includes("influencer") ||
       answers.distributionChannel.toLowerCase().includes("seo");
 
-    if (isEnterpriseICP && isViralDistribution && !hasOutboundSales) {
+    if (isEnterpriseBuyer && isViralDistribution && !hasOutboundSales) {
       addRule(
         "RULE_15_ICP_DIST_MISMATCH",
         "ICP-Distribution Channel Mismatch",

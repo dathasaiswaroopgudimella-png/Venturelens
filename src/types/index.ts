@@ -91,6 +91,7 @@ export interface DimensionScore {
   evidenceLevel: number; // 0 to 10 scale
   keyIssues: string[];
   suggestions: string[];
+  reasoning?: string;
 }
 
 export interface ScoringEquationComponent {
@@ -175,7 +176,7 @@ export interface AICrossVerification {
   aiStrategicVerdict: string;
   aiConfidence: "Low" | "Medium" | "High";
   agreementScore: number; // 0 - 100%
-  agreementStatus: "✓ Very High Agreement" | "✓ High Agreement" | "⚠ Moderate Disagreement" | "⚠ Significant Disagreement";
+  agreementStatus: "✓ Very High Agreement" | "✓ High Agreement" | "⚠ Moderate Disagreement" | "⚠ Significant Disagreement" | "🛑 Severe Disagreement";
   dimensionAgreement?: {
     problem: number;
     customer: number;
