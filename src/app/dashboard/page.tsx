@@ -216,8 +216,8 @@ export default function DashboardPage() {
               VL
             </div>
             <div>
-              <p className="font-semibold text-xs text-on-surface">VentureLens Demo</p>
-              <p className="text-[10px] text-on-surface-variant">Beta Access</p>
+              <p className="font-semibold text-xs text-on-surface">Datha Sai Swaroop</p>
+              <p className="text-[10px] text-on-surface-variant">Founder · IIT BHU</p>
             </div>
           </div>
         </div>
