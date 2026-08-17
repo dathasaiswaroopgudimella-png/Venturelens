@@ -16,14 +16,15 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "VentureLens AI | Decision Intelligence for Startups",
+  title: "VentureLens AI — Institutional Venture Intelligence Platform",
   description:
-    "Evaluate your startup idea through deterministic scoring, rules, evidence, consistency validation, and expert AI strategic reviews.",
+    "Institutional startup due diligence, evidence-grounded scoring equations, 16 deterministic VC logic rules, and 5-pillar adversarial cross-verification. Founded by Datha Sai Swaroop (IIT BHU).",
+  authors: [{ name: "Datha Sai Swaroop (IIT BHU)", url: "https://www.linkedin.com/in/datha-sai-swaroop-gudimella-ab4184371" }],
   metadataBase: new URL("https://venturelens-two.vercel.app"),
   openGraph: {
-    title: "VentureLens AI — Decision Intelligence Platform",
+    title: "VentureLens AI — Institutional Venture Intelligence",
     description:
-      "Move beyond chatbot guesses. Run your startup through a deterministic 9-stage validation pipeline. Free during beta.",
+      "Move beyond chatbot guesses. Stress-test your venture thesis with transparent mathematical scoring equations, 16 deterministic VC rules, and 5-pillar AI cross-checks.",
     url: "https://venturelens-two.vercel.app",
     siteName: "VentureLens AI",
     locale: "en_US",
@@ -31,9 +32,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "VentureLens AI — Decision Intelligence for Founders",
+    title: "VentureLens AI — Institutional Venture Intelligence Platform",
     description:
-      "Deterministic startup scoring, live competitor analysis, and AI cross-verification. Free for founders.",
+      "Evidence-grounded scoring equations, multi-layer pitch deck parsing, and 5-pillar cross-checks for serious founders.",
   },
   robots: {
     index: true,

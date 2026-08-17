@@ -54,12 +54,12 @@ export default function WizardPage() {
     "Structured Fact Extraction Engine running...",
     "Venture Knowledge Graph Builder mapping entities...",
     "Deterministic Rule Engine evaluating 16 logic checks...",
-    "Heuristic Scoring Engine computing 10 dimensions...",
-    "Evidence Engine compiling supporting references...",
+    "Evidence-Grounded Scoring Engine computing 8-dimension equation...",
+    "Evidence Engine compiling supporting references & confidence...",
     "Consistency Engine verifying claims vs external benchmarks...",
-    "OpenRouter Market Research Intelligence running...",
-    "AI Explanation Layer drafting SWOT and GTM roadmap...",
-    "AI Strategic Review executing cross-verification...",
+    "OpenRouter Deep Venture Intelligence Reasoning running...",
+    "AI Partner Diligence drafting SWOT, MVP Scope & GTM roadmap...",
+    "5-Pillar AI Cross-Verification testing venture thesis...",
     "Assembling Unified Venture Intelligence Report...",
   ];
 
