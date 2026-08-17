@@ -13,7 +13,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   const { currentReport, loadReport, fetchReportById } = useVentureStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"summary" | "analysis" | "roadmap" | "copy">("summary");
+  const [activeTab, setActiveTab] = useState<"summary" | "analysis" | "roadmap" | "copy" | "rules" | "knowledge">("summary");
 
   const handleComingSoon = (feature: string) => {
     toast.info(`${feature} is coming soon`, {
@@ -78,10 +78,19 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
     );
   }
 
-  const { scores, facts, ruleOutcomes, consistency, recommendations, aiAnalysis, crossVerification } = currentReport;
+  const {
+    scores,
+    facts,
+    ruleOutcomes,
+    consistency,
+    recommendations,
+    aiAnalysis,
+    crossVerification,
+    decisionExperiment,
+    retrievedKnowledge,
+  } = currentReport;
 
   // Radar chart calculations: Map 5 dimensions to SVG points
-  // Dimensions: Problem (0 deg), Customer (72 deg), Market (144 deg), Business Model (216 deg), Risk (288 deg)
   const getRadarPoints = () => {
     const center = 120;
     const rScale = 0.8; // Scale max radius (80px)
@@ -105,7 +114,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
     return points.join(" ");
   };
 
-  // Download PDF simulation or JSON dump
+  // Download PDF / JSON dump
   const handleExportPDF = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentReport, null, 2));
     const downloadAnchor = document.createElement("a");
@@ -210,6 +219,68 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             </div>
           </div>
 
+          {/* VentureLens 2.0 Decision & Next Experiment Banner */}
+          {decisionExperiment && (
+            <section className={`rounded-xl border p-6 shadow-sm ${
+              decisionExperiment.verdict === "CONTINUE"
+                ? "bg-emerald-50/70 border-emerald-200"
+                : decisionExperiment.verdict === "PIVOT"
+                ? "bg-amber-50/70 border-amber-200"
+                : "bg-red-50/70 border-red-200"
+            }`}>
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">
+                      VentureLens 2.0 Verdict:
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-extrabold tracking-wider uppercase border shadow-sm ${
+                      decisionExperiment.verdict === "CONTINUE"
+                        ? "bg-emerald-600 text-white border-emerald-700"
+                        : decisionExperiment.verdict === "PIVOT"
+                        ? "bg-amber-500 text-white border-amber-600"
+                        : "bg-red-600 text-white border-red-700"
+                    }`}>
+                      {decisionExperiment.verdict === "CONTINUE" ? "🚀 CONTINUE" : decisionExperiment.verdict === "PIVOT" ? "🔄 PIVOT" : "🛑 STOP"}
+                    </span>
+                  </div>
+                  <p className="text-sm text-on-surface font-medium leading-relaxed">
+                    {decisionExperiment.strategicReasoning}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-bold">Primary Risk:</span> {decisionExperiment.primaryRiskFactor}
+                  </p>
+                </div>
+
+                <div className="bg-white/90 p-5 rounded-lg border border-outline-variant/30 lg:w-[420px] shrink-0 space-y-3">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+                      Recommended 14-Day Validation Experiment
+                    </span>
+                    <p className="text-xs font-semibold text-on-surface mt-1 leading-snug">
+                      {decisionExperiment.recommendedExperiment}
+                    </p>
+                  </div>
+                  {decisionExperiment.validationMilestones && decisionExperiment.validationMilestones.length > 0 && (
+                    <div className="pt-2 border-t border-outline-variant/20">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant block mb-1">
+                        Milestone Gates:
+                      </span>
+                      <ul className="space-y-1 text-[11px] text-on-surface-variant">
+                        {decisionExperiment.validationMilestones.map((m, idx) => (
+                          <li key={idx} className="flex gap-1.5">
+                            <span className="text-secondary font-bold">✓</span>
+                            <span>{m}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* Top Section: Venture Score Card & SVGs */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Overall Venture Score Card */}
@@ -302,14 +373,14 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                       points={getRadarPoints()}
                     />
 
-                    {/* SVG Labels: problem (angle 0), customer (72), market (144), model (216), team risk (288) */}
+                    {/* SVG Labels */}
                     {(() => {
                       const labels = ["Problem", "Customer", "Market", "Model", "Team Risk"];
                       return [0, 72, 144, 216, 288].map((angle, index) => {
                         const rad = (angle - 90) * (Math.PI / 180);
-                        const r = 98; // radius for placing labels outside grid
+                        const r = 98;
                         const lx = 120 + r * Math.cos(rad);
-                        const ly = 120 + r * Math.sin(rad) + 4; // +4 for visual center adjustment
+                        const ly = 120 + r * Math.sin(rad) + 4;
                         
                         let anchor: "middle" | "start" | "end" = "middle";
                         if (index === 1 || index === 2) anchor = "start";
@@ -330,7 +401,9 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                     })()}
                   </svg>
                 </div>
-              </div>              {/* AI Executive Summary Card */}
+              </div>
+
+              {/* AI Executive Summary Card */}
               <div className="bg-white p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col justify-between">
                 <h3 className="font-mono text-xs text-on-surface-variant uppercase tracking-widest mb-4 flex items-center gap-1.5 font-semibold">
                   <span className="material-symbols-outlined text-secondary text-base">auto_awesome</span>
@@ -425,10 +498,10 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
           {/* Sub-layout Tabs for detailed analyses */}
           <section className="space-y-6">
-            <div className="flex border-b border-outline-variant/30">
+            <div className="flex border-b border-outline-variant/30 overflow-x-auto">
               <button
                 onClick={() => setActiveTab("summary")}
-                className={`py-3 px-6 text-sm font-semibold transition-all ${
+                className={`py-3 px-5 text-sm font-semibold whitespace-nowrap transition-all ${
                   activeTab === "summary"
                     ? "border-b-2 border-secondary text-secondary"
                     : "text-on-surface-variant hover:text-on-surface"
@@ -438,7 +511,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
               </button>
               <button
                 onClick={() => setActiveTab("analysis")}
-                className={`py-3 px-6 text-sm font-semibold transition-all ${
+                className={`py-3 px-5 text-sm font-semibold whitespace-nowrap transition-all ${
                   activeTab === "analysis"
                     ? "border-b-2 border-secondary text-secondary"
                     : "text-on-surface-variant hover:text-on-surface"
@@ -448,7 +521,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
               </button>
               <button
                 onClick={() => setActiveTab("roadmap")}
-                className={`py-3 px-6 text-sm font-semibold transition-all ${
+                className={`py-3 px-5 text-sm font-semibold whitespace-nowrap transition-all ${
                   activeTab === "roadmap"
                     ? "border-b-2 border-secondary text-secondary"
                     : "text-on-surface-variant hover:text-on-surface"
@@ -458,13 +531,41 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
               </button>
               <button
                 onClick={() => setActiveTab("copy")}
-                className={`py-3 px-6 text-sm font-semibold transition-all ${
+                className={`py-3 px-5 text-sm font-semibold whitespace-nowrap transition-all ${
                   activeTab === "copy"
                     ? "border-b-2 border-secondary text-secondary"
                     : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 Landing Page & Pitch
+              </button>
+              <button
+                onClick={() => setActiveTab("rules")}
+                className={`py-3 px-5 text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                  activeTab === "rules"
+                    ? "border-b-2 border-secondary text-secondary"
+                    : "text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                <span>VC Rules Engine</span>
+                <span className="px-1.5 py-0.2 bg-surface-container-high rounded text-[10px] font-mono">
+                  {ruleOutcomes.length}
+                </span>
+              </button>
+              <button
+                onClick={() => setActiveTab("knowledge")}
+                className={`py-3 px-5 text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                  activeTab === "knowledge"
+                    ? "border-b-2 border-secondary text-secondary"
+                    : "text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                <span>VC Frameworks (RAG)</span>
+                {retrievedKnowledge && (
+                  <span className="px-1.5 py-0.2 bg-secondary/10 text-secondary rounded text-[10px] font-mono">
+                    {retrievedKnowledge.length}
+                  </span>
+                )}
               </button>
             </div>
 
@@ -609,6 +710,106 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                       </div>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Tab 5: VC Rules Engine (16 Rules) */}
+              {activeTab === "rules" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold">16 Deterministic VC Logic Rules</h3>
+                      <p className="text-xs text-on-surface-variant mt-1">
+                        Heuristic logic gates evaluated across problem urgency, market size, competition, and unit economics.
+                      </p>
+                    </div>
+                    <div className="flex gap-2 text-xs font-mono">
+                      <span className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded font-bold">
+                        {ruleOutcomes.filter((r) => r.status === "PASS").length} PASS
+                      </span>
+                      <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded font-bold">
+                        {ruleOutcomes.filter((r) => r.status === "WARNING").length} WARNING
+                      </span>
+                      <span className="px-2 py-1 bg-red-100 text-red-800 rounded font-bold">
+                        {ruleOutcomes.filter((r) => r.status === "FAIL").length} FAIL
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {ruleOutcomes.map((rule) => (
+                      <div
+                        key={rule.id}
+                        className={`p-4 rounded-lg border transition-all ${
+                          rule.status === "PASS"
+                            ? "bg-emerald-50/40 border-emerald-200"
+                            : rule.status === "WARNING"
+                            ? "bg-amber-50/40 border-amber-200"
+                            : "bg-red-50/40 border-red-200"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold font-mono text-on-surface">{rule.name}</span>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase ${
+                              rule.status === "PASS"
+                                ? "bg-emerald-600 text-white"
+                                : rule.status === "WARNING"
+                                ? "bg-amber-500 text-white"
+                                : "bg-red-600 text-white"
+                            }`}
+                          >
+                            {rule.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-on-surface leading-relaxed font-normal">{rule.message}</p>
+                        {rule.impactScoreEffect !== 0 && (
+                          <span className="text-[10px] font-mono font-semibold text-on-surface-variant block mt-2">
+                            Score Impact: {rule.impactScoreEffect > 0 ? `+${rule.impactScoreEffect}` : rule.impactScoreEffect} pts
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 6: VC Frameworks (RAG) */}
+              {activeTab === "knowledge" && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-xl font-bold">Curated VC Knowledge Base (RAG Frameworks)</h3>
+                    <p className="text-xs text-on-surface-variant mt-1">
+                      Real-world venture capital evaluation models, Y Combinator playbooks, and IIT E-Cell frameworks retrieved for this startup.
+                    </p>
+                  </div>
+
+                  {retrievedKnowledge && retrievedKnowledge.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {retrievedKnowledge.map((k) => (
+                        <div key={k.id} className="bg-surface p-5 rounded-lg border border-outline-variant/30 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-secondary uppercase tracking-wider">{k.title}</span>
+                            <span className="px-2 py-0.5 bg-secondary/10 text-secondary text-[10px] font-mono font-bold rounded">
+                              {k.category}
+                            </span>
+                          </div>
+                          <p className="text-xs text-on-surface leading-relaxed font-normal">{k.content}</p>
+                          <div className="flex flex-wrap gap-1.5 pt-2 border-t border-outline-variant/20">
+                            {k.tags.map((tag, tIdx) => (
+                              <span key={tIdx} className="text-[9px] font-mono bg-white px-2 py-0.5 rounded border border-outline-variant/30 text-on-surface-variant">
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-on-surface-variant">
+                      Standard venture capital evaluation frameworks were applied to this analysis.
+                    </p>
+                  )}
                 </div>
               )}
             </div>

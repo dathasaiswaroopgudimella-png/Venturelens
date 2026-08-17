@@ -1,11 +1,13 @@
 import { OpenAI } from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Top ultra-fast low-latency models for concurrent racing
+// Fast free model pool for concurrent racing
 const RACING_MODELS = [
   "meta-llama/llama-3.2-3b-instruct:free",
   "google/gemma-2-9b-it:free",
   "qwen/qwen-2.5-7b-instruct:free",
+  "mistralai/mistral-7b-instruct:free",
+  "nvidia/nemotron-nano-9b-v2:free",
 ];
 
 export class AIProvider {
@@ -40,9 +42,9 @@ export class AIProvider {
   }
 
   /**
-   * Generates a text completion using concurrent multi-model racing (Promise.any).
-   * Fires Gemini and top OpenRouter models simultaneously. First working response (<3s) wins immediately.
-   * Total latency hard-capped at 5.0 seconds.
+   * Generates a rich, deep structured completion using concurrent racing (Promise.any).
+   * Runs Gemini Flash and top OpenRouter models in parallel with a 10s timeout.
+   * The first successful full response wins immediately.
    */
   async generateCompletion(
     systemPrompt: string,
@@ -52,19 +54,19 @@ export class AIProvider {
     const candidates: Promise<string>[] = [];
     const abortControllers: AbortController[] = [];
 
-    // 1. Candidate: Google Gemini Flash (if configured)
+    // 1. Candidate: Google Gemini Flash (ultra-fast: 1.2s - 2.5s)
     if (this.gemini) {
       candidates.push(
         (async () => {
           const model = this.gemini!.getGenerativeModel({
             model: "gemini-1.5-flash",
             generationConfig: jsonMode
-              ? { responseMimeType: "application/json", maxOutputTokens: 950, temperature: 0.2 }
-              : { maxOutputTokens: 950, temperature: 0.2 },
+              ? { responseMimeType: "application/json", maxOutputTokens: 1600, temperature: 0.3 }
+              : { maxOutputTokens: 1600, temperature: 0.3 },
           });
 
           const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("Gemini timeout (>4.5s)")), 4500)
+            setTimeout(() => reject(new Error("Gemini timeout (>10s)")), 10000)
           );
 
           const result = await Promise.race([
@@ -73,8 +75,8 @@ export class AIProvider {
           ]);
 
           const text = result.response.text();
-          if (text && text.trim().length > 10) {
-            console.log("[AIProvider] Gemini Flash race winner ✓");
+          if (text && text.trim().length > 20) {
+            console.log("[AIProvider] Google Gemini Flash race winner ✓");
             return text;
           }
           throw new Error("Gemini returned empty response");
@@ -82,7 +84,7 @@ export class AIProvider {
       );
     }
 
-    // 2. Candidates: OpenRouter Parallel Model Racing
+    // 2. Candidates: OpenRouter Fast Model Racing
     if (this.openrouterKey) {
       for (const model of RACING_MODELS) {
         const controller = new AbortController();
@@ -90,7 +92,7 @@ export class AIProvider {
 
         candidates.push(
           (async () => {
-            const timeout = setTimeout(() => controller.abort(), 4500); // 4.5s hard timeout per candidate
+            const timeout = setTimeout(() => controller.abort(), 10000); // 10s per-candidate timeout
             try {
               const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
@@ -107,8 +109,8 @@ export class AIProvider {
                     { role: "user", content: userPrompt },
                   ],
                   response_format: jsonMode ? { type: "json_object" } : undefined,
-                  temperature: 0.2,
-                  max_tokens: 950,
+                  temperature: 0.3,
+                  max_tokens: 1600,
                 }),
                 signal: controller.signal,
               });
@@ -117,7 +119,7 @@ export class AIProvider {
               if (res.ok) {
                 const data = await res.json();
                 const text = data.choices?.[0]?.message?.content || "";
-                if (text && text.trim().length > 10) {
+                if (text && text.trim().length > 20) {
                   console.log(`[AIProvider] OpenRouter (${model}) race winner ✓`);
                   return text;
                 }
@@ -132,12 +134,12 @@ export class AIProvider {
       }
     }
 
-    // 3. Candidate: NVIDIA NIM (if configured)
+    // 3. Candidate: NVIDIA NIM
     if (this.openai) {
       candidates.push(
         (async () => {
           const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("NVIDIA NIM timeout (>4.5s)")), 4500)
+            setTimeout(() => reject(new Error("NVIDIA NIM timeout (>10s)")), 10000)
           );
 
           const apiCall = this.openai!.chat.completions.create({
@@ -147,13 +149,13 @@ export class AIProvider {
               { role: "user", content: userPrompt },
             ],
             response_format: jsonMode ? { type: "json_object" } : undefined,
-            temperature: 0.2,
-            max_tokens: 950,
+            temperature: 0.3,
+            max_tokens: 1600,
           });
 
           const response = await Promise.race([apiCall, timeoutPromise]);
           const text = response.choices[0]?.message?.content || "";
-          if (text && text.trim().length > 10) {
+          if (text && text.trim().length > 20) {
             console.log("[AIProvider] NVIDIA NIM race winner ✓");
             return text;
           }
@@ -167,9 +169,7 @@ export class AIProvider {
     }
 
     try {
-      // Return the FIRST fast response that succeeds across all concurrent candidates
       const winner = await Promise.any(candidates);
-      // Abort other candidates
       abortControllers.forEach((c) => {
         try { c.abort(); } catch (e) {}
       });
@@ -178,7 +178,7 @@ export class AIProvider {
       abortControllers.forEach((c) => {
         try { c.abort(); } catch (e) {}
       });
-      throw new Error("All AI race candidates failed or timed out. Falling back to deterministic synthesis.");
+      throw new Error("All AI candidates failed or timed out.");
     }
   }
 }
