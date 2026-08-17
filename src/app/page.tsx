@@ -92,10 +92,10 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section className="relative pt-24 pb-32 overflow-hidden bg-surface">
           <div className="relative z-10 max-w-[1440px] mx-auto px-8 text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-accent/10 border border-emerald-accent/20 rounded-full mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-accent/10 border border-emerald-accent/20 rounded-full mb-8">
               <span className="w-2 h-2 rounded-full bg-emerald-accent animate-pulse"></span>
-              <span className="font-mono text-xs text-emerald-accent font-semibold uppercase tracking-wider">
-                Venture Intelligence 2.0
+              <span className="text-xs text-emerald-accent font-semibold tracking-wide">
+                Venture Intelligence Platform
               </span>
             </div>
 
@@ -129,20 +129,24 @@ export default function LandingPage() {
             {/* Architecture Metrics Row */}
             <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto text-left">
               <div className="p-5 bg-white rounded-xl border border-outline-variant/30 micro-shadow">
-                <span className="text-2xl font-extrabold text-secondary block mb-1">16 Rules</span>
-                <span className="text-xs text-on-surface-variant font-medium">Deterministic VC Logic Gates</span>
+                <div className="text-3xl font-extrabold text-secondary mb-2">16</div>
+                <div className="text-sm font-bold text-on-surface mb-0.5">Logic Rules</div>
+                <div className="text-xs text-on-surface-variant leading-snug">Deterministic VC validation gates</div>
               </div>
               <div className="p-5 bg-white rounded-xl border border-outline-variant/30 micro-shadow">
-                <span className="text-2xl font-extrabold text-emerald-accent block mb-1">8 Dimensions</span>
-                <span className="text-xs text-on-surface-variant font-medium">Evidence-Grounded Scoring Math</span>
+                <div className="text-3xl font-extrabold text-emerald-accent mb-2">8</div>
+                <div className="text-sm font-bold text-on-surface mb-0.5">Scoring Dimensions</div>
+                <div className="text-xs text-on-surface-variant leading-snug">Evidence-grounded math, not guesses</div>
               </div>
               <div className="p-5 bg-white rounded-xl border border-outline-variant/30 micro-shadow">
-                <span className="text-2xl font-extrabold text-secondary block mb-1">5 Pillars</span>
-                <span className="text-xs text-on-surface-variant font-medium">Independent AI Cross-Check</span>
+                <div className="text-3xl font-extrabold text-secondary mb-2">5</div>
+                <div className="text-sm font-bold text-on-surface mb-0.5">AI Pillars</div>
+                <div className="text-xs text-on-surface-variant leading-snug">Independent adversarial cross-check</div>
               </div>
               <div className="p-5 bg-white rounded-xl border border-outline-variant/30 micro-shadow">
-                <span className="text-2xl font-extrabold text-emerald-accent block mb-1">14 Days</span>
-                <span className="text-xs text-on-surface-variant font-medium">Concrete Validation Roadmaps</span>
+                <div className="text-3xl font-extrabold text-emerald-accent mb-2">14</div>
+                <div className="text-sm font-bold text-on-surface mb-0.5">Day Roadmap</div>
+                <div className="text-xs text-on-surface-variant leading-snug">Concrete validation experiments</div>
               </div>
             </div>
           </div>

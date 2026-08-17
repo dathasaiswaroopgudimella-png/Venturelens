@@ -5,7 +5,7 @@ import { safeJsonParse } from "@/lib/utils/json-repair";
 import { cleanFieldText, extractStartupName } from "@/lib/utils/clean-inputs";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 // ─── Revenue Model Normalizer ─────────────────────────────────────────────────
 function normalizeRevenueModel(rawModel?: string): QuestionnaireAnswers["revenueModel"] {
@@ -150,16 +150,20 @@ function extractHeuristicParameters(rawText: string): Partial<QuestionnaireAnswe
 
 // ─── PDF Text Extraction ──────────────────────────────────────────────────────
 async function extractPdfText(buffer: Buffer): Promise<string> {
-  // Method 1: pdf-parse v2 PDFParse class (.getText() returns { pages, text, total })
+  // Method 1: pdf-parse v2 PDFParse class — MUST call load() before getText()
   try {
     const pdfLib = require("pdf-parse");
     if (pdfLib?.PDFParse) {
-      const parser = new pdfLib.PDFParse({ data: buffer });
+      // pdf-parse v2 requires Uint8Array, not Buffer
+      const uint8 = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+      const parser = new pdfLib.PDFParse({ data: uint8 });
+      // CRITICAL: must await load() before getText() in v2
+      await parser.load();
       const result = await parser.getText();
       try { await parser.destroy(); } catch (_) {}
 
       if (result?.text && typeof result.text === "string" && result.text.trim().length > 10) {
-        console.log(`[ParseDocument] PDF extracted via PDFParse class: ${result.text.length} chars`);
+        console.log(`[ParseDocument] PDF extracted via PDFParse.load().getText(): ${result.text.length} chars`);
         return result.text.trim();
       }
       if (typeof result === "string" && result.trim().length > 10) {
@@ -174,7 +178,7 @@ async function extractPdfText(buffer: Buffer): Promise<string> {
       }
     }
   } catch (e) {
-    console.warn("[ParseDocument] pdf-parse PDFParse class failed:", (e as Error).message);
+    console.warn("[ParseDocument] pdf-parse v2 PDFParse failed:", (e as Error).message);
   }
 
   // Method 2: Try default function export
