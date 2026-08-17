@@ -16,10 +16,14 @@ import { cookies } from "next/headers";
 import { QuestionnaireAnswers, UnifiedVentureReport } from "@/types";
 import { nanoid } from "nanoid";
 
+// Force dynamic execution & configure max duration for Vercel Serverless
+export const dynamic = "force-dynamic";
+export const maxDuration = 30;
+
 // In-memory sliding-window rate limiting map
 const ipCache = new Map<string, number[]>();
 const LIMIT_WINDOW = 60000;
-const MAX_REQUESTS = 15;
+const MAX_REQUESTS = 20;
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -53,22 +57,19 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("[API/Analyze] Launching High-Speed VentureLens 2.0 Pipeline...");
+    console.log("[API/Analyze] Launching Ultra-Fast VentureLens 2.0 Single-Pass Pipeline...");
 
-    // 1. Initialize Engines
-    const aiProvider = new AIProvider();
-    const extractor = new StructuredExtractor(aiProvider);
-    const research = new ExternalResearch();
+    // 1. Instant Phase 1 (<5ms total): Facts + Knowledge RAG + Fast Research
+    const extractor = new StructuredExtractor();
+    const facts = extractor.extract(answers);
+
     const retriever = new KnowledgeRetriever();
+    const retrievedKnowledge = retriever.retrieve(answers, facts);
 
-    // 2. PARALLEL PHASE 1: Run Fact Extraction, Market Research, and RAG Retrieval Concurrently
-    const [facts, researchResult, retrievedKnowledge] = await Promise.all([
-      extractor.extract(answers),
-      research.performResearch(answers),
-      Promise.resolve(retriever.retrieve(answers)),
-    ]);
+    const research = new ExternalResearch();
+    const researchResult = await research.performResearch(answers, facts);
 
-    // 3. Fast Synchronous Deterministic Engines (<15ms)
+    // 2. Synchronous Deterministic Engines (<10ms)
     const graphBuilder = new KnowledgeGraphBuilder();
     const graph = graphBuilder.build(facts);
 
@@ -90,7 +91,8 @@ export async function POST(req: Request) {
     const decisionEngine = new DecisionEngine();
     const decisionExperiment = decisionEngine.evaluate(facts, ruleOutcomes, scores, answers);
 
-    // 4. PARALLEL PHASE 2: Single-Pass Combined AI Strategic Synthesis & Cross-Verification
+    // 3. Single-Pass Concurrent Fast AI Strategic Synthesis & Cross-Verification (~1.5s - 3s)
+    const aiProvider = new AIProvider();
     const explainer = new AIExplainer(aiProvider);
     const { aiAnalysis, crossVerification } = await explainer.generateCombinedReport(
       facts,
@@ -120,7 +122,7 @@ export async function POST(req: Request) {
       createdAt: new Date().toISOString(),
     };
 
-    // 5. Asynchronous Non-Blocking Database Persistence (Never Delays User Response)
+    // 4. Asynchronous Non-Blocking Database Persistence (Never Delays Response)
     (async () => {
       try {
         const cookieStore = await cookies();
@@ -167,7 +169,7 @@ export async function POST(req: Request) {
           }
         }
       } catch (dbError) {
-        // Non-blocking background error log
+        // Non-blocking background persistence error
       }
     })();
 
