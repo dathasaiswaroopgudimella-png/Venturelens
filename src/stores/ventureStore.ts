@@ -54,17 +54,13 @@ export const useVentureStore = create<VentureStore>((set, get) => ({
 
   startAnalysis: async (answers) => {
     set({ isAnalyzing: true });
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
 
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(answers),
-        signal: controller.signal,
       });
-      clearTimeout(timeout);
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
@@ -176,7 +172,7 @@ export const useVentureStore = create<VentureStore>((set, get) => ({
 
     const response = await fetch(`/api/reports/${id}`);
     if (!response.ok) {
-      const err = await response.json();
+      const err = await response.json().catch(() => ({}));
       throw new Error(err.error || "Failed to fetch report.");
     }
     const report: UnifiedVentureReport = await response.json();
