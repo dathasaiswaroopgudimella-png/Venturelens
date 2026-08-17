@@ -83,10 +83,32 @@ export interface RuleOutcome {
 
 export interface DimensionScore {
   score: number;
+  rawScore?: number;
+  evidenceConfidence?: number; // 0 to 100%
+  weight?: number; // e.g. 0.20
+  contribution?: number; // weight * score
   confidence: "Low" | "Medium" | "High";
   evidenceLevel: number; // 0 to 10 scale
   keyIssues: string[];
   suggestions: string[];
+}
+
+export interface ScoringEquationComponent {
+  dimension: string;
+  weight: number; // e.g. 20 for 20%
+  rawScore: number;
+  evidenceConfidence: number; // e.g. 85 for 85%
+  adjustedScore: number;
+  weightedContribution: number;
+  evidenceRationale: string;
+}
+
+export interface ScoringEquation {
+  rawScoreTotal: number;
+  overallEvidenceConfidence: number;
+  finalAdjustedScore: number;
+  formulaDescription: string;
+  components: ScoringEquationComponent[];
 }
 
 export interface VentureScores {
@@ -154,6 +176,19 @@ export interface AICrossVerification {
   aiConfidence: "Low" | "Medium" | "High";
   agreementScore: number; // 0 - 100%
   agreementStatus: "✓ Very High Agreement" | "✓ High Agreement" | "⚠ Moderate Disagreement" | "⚠ Significant Disagreement";
+  dimensionAgreement?: {
+    problem: number;
+    customer: number;
+    market: number;
+    businessModel: number;
+    execution: number;
+  };
+  explanationIntegrity?: {
+    score: number;
+    formula: string;
+    supportedClaimsCount: number;
+    totalClaimsCount: number;
+  };
   challengedAssumptions: string[];
   reasonForDisagreement: string;
   additionalEvidenceRequired: string[];
@@ -185,6 +220,7 @@ export interface UnifiedVentureReport {
   graph: VentureKnowledgeGraph;
   ruleOutcomes: RuleOutcome[];
   scores: VentureScores;
+  scoringEquation?: ScoringEquation;
   evidence: Record<string, EvidenceData>;
   consistency: ConsistencyReport;
   recommendations: Recommendation[];

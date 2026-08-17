@@ -16,14 +16,13 @@ import { cookies } from "next/headers";
 import { QuestionnaireAnswers, UnifiedVentureReport } from "@/types";
 import { nanoid } from "nanoid";
 
-// Force dynamic execution & configure max duration for Vercel Serverless
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 // In-memory sliding-window rate limiting map
 const ipCache = new Map<string, number[]>();
 const LIMIT_WINDOW = 60000;
-const MAX_REQUESTS = 20;
+const MAX_REQUESTS = 25;
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -57,9 +56,9 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("[API/Analyze] Launching Ultra-Fast VentureLens 2.0 Single-Pass Pipeline...");
+    console.log("[API/Analyze] Launching Institutional VentureLens 2.0 Diligence Pipeline...");
 
-    // 1. Instant Phase 1 (<5ms total): Facts + Knowledge RAG + Fast Research
+    // 1. Instant Structured Fact Extraction & Knowledge Retrieval (<5ms)
     const extractor = new StructuredExtractor();
     const facts = extractor.extract(answers);
 
@@ -69,7 +68,7 @@ export async function POST(req: Request) {
     const research = new ExternalResearch();
     const researchResult = await research.performResearch(answers, facts);
 
-    // 2. Synchronous Deterministic Engines (<10ms)
+    // 2. Deterministic Rule & Evidence-Grounded Scoring Engines (<10ms)
     const graphBuilder = new KnowledgeGraphBuilder();
     const graph = graphBuilder.build(facts);
 
@@ -77,7 +76,7 @@ export async function POST(req: Request) {
     const ruleOutcomes = ruleEngine.evaluate(facts, answers);
 
     const scoringEngine = new ScoringEngine();
-    const scores = scoringEngine.calculate(facts, ruleOutcomes, answers);
+    const { scores, equation } = scoringEngine.calculate(facts, ruleOutcomes, answers);
 
     const evidenceEngine = new EvidenceEngine();
     const evidence = evidenceEngine.evaluate(facts, answers);
@@ -91,7 +90,7 @@ export async function POST(req: Request) {
     const decisionEngine = new DecisionEngine();
     const decisionExperiment = decisionEngine.evaluate(facts, ruleOutcomes, scores, answers);
 
-    // 3. Single-Pass Concurrent Fast AI Strategic Synthesis & Cross-Verification (~1.5s - 3s)
+    // 3. Deep Diligence OpenRouter AI Synthesis (~2-6s)
     const aiProvider = new AIProvider();
     const explainer = new AIExplainer(aiProvider);
     const { aiAnalysis, crossVerification } = await explainer.generateCombinedReport(
@@ -100,7 +99,8 @@ export async function POST(req: Request) {
       scores,
       answers,
       researchResult.evidenceText,
-      retrievedKnowledge
+      retrievedKnowledge,
+      equation
     );
 
     // Compile Final Unified Report
@@ -112,6 +112,7 @@ export async function POST(req: Request) {
       graph,
       ruleOutcomes,
       scores,
+      scoringEquation: equation,
       evidence,
       consistency,
       recommendations,
@@ -122,7 +123,7 @@ export async function POST(req: Request) {
       createdAt: new Date().toISOString(),
     };
 
-    // 4. Asynchronous Non-Blocking Database Persistence (Never Delays Response)
+    // 4. Asynchronous Non-Blocking Database Persistence
     (async () => {
       try {
         const cookieStore = await cookies();

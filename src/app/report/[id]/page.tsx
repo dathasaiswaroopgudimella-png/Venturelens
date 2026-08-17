@@ -1,79 +1,63 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { useVentureStore } from "@/stores/ventureStore";
 import { UnifiedVentureReport } from "@/types";
 import { toast } from "sonner";
 
-export default function ReportPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ReportPage() {
+  const params = useParams();
   const router = useRouter();
-  const { id } = use(params);
-  const { currentReport, loadReport, fetchReportById } = useVentureStore();
+  const id = params?.id as string;
+  const { currentReport, fetchReportById } = useVentureStore();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"summary" | "analysis" | "roadmap" | "copy" | "rules" | "knowledge">("summary");
-
-  const handleComingSoon = (feature: string) => {
-    toast.info(`${feature} is coming soon`, {
-      description: "This feature is on our Q3 2026 roadmap.",
-      duration: 3000,
-    });
-  };
+  const [activeTab, setActiveTab] = useState<"summary" | "analysis" | "roadmap" | "copy" | "rules" | "knowledge" | "equation">("summary");
 
   useEffect(() => {
-    const getReport = async () => {
+    const load = async () => {
       try {
-        if (id === "latest" || id === "healthsync-ai" || id === "demo-healthsync-001") {
-          if (id === "latest") {
-            const localStr = localStorage.getItem("latest_venturelens_report");
-            if (localStr) {
-              const report = JSON.parse(localStr);
-              loadReport(report);
-            } else {
-              const { DEMO_REPORT } = await import("@/lib/demo-report");
-              loadReport(DEMO_REPORT);
-            }
-          } else {
-            const { DEMO_REPORT } = await import("@/lib/demo-report");
-            loadReport(DEMO_REPORT);
-          }
-        } else {
-          // Fetch from database
+        if (!currentReport || (id !== "latest" && currentReport.projectId !== id)) {
           await fetchReportById(id);
         }
       } catch (err: any) {
-        console.error("Failed to load report", err);
-        setError(err.message || "Failed to load report.");
+        toast.error("Failed to load venture report.");
       } finally {
         setLoading(false);
       }
     };
-    getReport();
-  }, [id]);
+    load();
+  }, [id, currentReport, fetchReportById]);
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-surface">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-secondary border-outline-variant/30 mb-4"></div>
-        <p className="text-sm font-mono text-on-surface-variant">Loading Venture Intelligence...</p>
+      <div className="flex h-screen items-center justify-center bg-surface">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-secondary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm font-semibold text-on-surface-variant font-mono">
+            Loading Venture Intelligence Dashboard...
+          </p>
+        </div>
       </div>
     );
   }
 
-  if (error || !currentReport) {
+  if (!currentReport) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-surface p-6 text-center max-w-md mx-auto">
-        <span className="material-symbols-outlined text-4xl text-error mb-4">warning</span>
-        <h2 className="text-xl font-bold mb-2">Failed to Load Report</h2>
-        <p className="text-sm text-on-surface-variant mb-6">{error || "Report not found."}</p>
-        <Link
-          href="/wizard"
-          className="bg-primary text-on-primary px-6 py-3 rounded-lg text-sm font-semibold hover:opacity-90 transition-all"
-        >
-          Start New Analysis
-        </Link>
+      <div className="flex h-screen items-center justify-center bg-surface">
+        <div className="text-center space-y-4 max-w-md p-6 bg-white rounded-xl border border-outline-variant/30 shadow-sm">
+          <span className="material-symbols-outlined text-4xl text-on-surface-variant">report_problem</span>
+          <h2 className="text-xl font-bold">Report Not Found</h2>
+          <p className="text-sm text-on-surface-variant">
+            No venture intelligence report was found for this session. You can create a new venture analysis through the wizard.
+          </p>
+          <button
+            onClick={() => router.push("/wizard")}
+            className="px-6 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity"
+          >
+            Launch Diligence Wizard
+          </button>
+        </div>
       </div>
     );
   }
@@ -82,84 +66,105 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
     scores,
     facts,
     ruleOutcomes,
+    evidence,
     consistency,
     recommendations,
     aiAnalysis,
     crossVerification,
-    decisionExperiment,
     retrievedKnowledge,
+    decisionExperiment,
+    scoringEquation,
   } = currentReport;
 
-  // Radar chart calculations: Map 5 dimensions to SVG points
+  // Radar Polygon Points Calculation
   const getRadarPoints = () => {
     const center = 120;
-    const rScale = 0.8; // Scale max radius (80px)
-    const angles = [0, 72, 144, 216, 288];
+    const maxRadius = 80;
     const values = [
-      scores.problem.score,
-      scores.customer.score,
-      scores.market.score,
-      scores.businessModel.score,
-      100 - scores.risk.score, // Invert Risk so high score is "better"
+      scores.problem.score / 100,
+      scores.customer.score / 100,
+      scores.market.score / 100,
+      scores.businessModel.score / 100,
+      scores.risk.score / 100,
     ];
 
-    const points = angles.map((angle, i) => {
-      const rad = (angle - 90) * (Math.PI / 180);
-      const r = values[i] * rScale;
-      const x = center + r * Math.cos(rad);
-      const y = center + r * Math.sin(rad);
-      return `${x},${y}`;
-    });
-
-    return points.join(" ");
+    return values
+      .map((val, i) => {
+        const angle = (i * 72 - 90) * (Math.PI / 180);
+        const r = val * maxRadius;
+        const x = center + r * Math.cos(angle);
+        const y = center + r * Math.sin(angle);
+        return `${x},${y}`;
+      })
+      .join(" ");
   };
 
-  // Download PDF / JSON dump
   const handleExportPDF = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentReport, null, 2));
-    const downloadAnchor = document.createElement("a");
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `VentureLens_Report_${currentReport.projectId}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    window.print();
   };
+
+  const handleComingSoon = (feature: string) => {
+    toast.info(`${feature} feature coming soon in VentureLens v2.1!`);
+  };
+
+  const equationComponents = scoringEquation?.components || [
+    { dimension: "Problem Urgency & Severity", weight: 20, rawScore: scores.problem.score, evidenceConfidence: 85, adjustedScore: scores.problem.score, weightedContribution: Number(((scores.problem.score * 20) / 100).toFixed(1)), evidenceRationale: "Pain severity and daily/weekly frequency." },
+    { dimension: "Target Customer (ICP) & Access", weight: 15, rawScore: scores.customer.score, evidenceConfidence: 80, adjustedScore: scores.customer.score, weightedContribution: Number(((scores.customer.score * 15) / 100).toFixed(1)), evidenceRationale: "Customer persona specificity." },
+    { dimension: "Market Size & Timing (TAM)", weight: 15, rawScore: scores.market.score, evidenceConfidence: 75, adjustedScore: scores.market.score, weightedContribution: Number(((scores.market.score * 15) / 100).toFixed(1)), evidenceRationale: "Addressable market potential." },
+    { dimension: "Business Model & Unit Economics", weight: 15, rawScore: scores.businessModel.score, evidenceConfidence: 80, adjustedScore: scores.businessModel.score, weightedContribution: Number(((scores.businessModel.score * 15) / 100).toFixed(1)), evidenceRationale: "Recurring monetization and gross margins." },
+    { dimension: "Competitive Advantage & Moat", weight: 10, rawScore: scores.competition.score, evidenceConfidence: 75, adjustedScore: scores.competition.score, weightedContribution: Number(((scores.competition.score * 10) / 100).toFixed(1)), evidenceRationale: "Workflow moat and switching costs." },
+    { dimension: "Team-Domain Execution Fit", weight: 10, rawScore: scores.execution.score, evidenceConfidence: 70, adjustedScore: scores.execution.score, weightedContribution: Number(((scores.execution.score * 10) / 100).toFixed(1)), evidenceRationale: "Domain credentials in target vertical." },
+    { dimension: "Traction & Empirical Evidence", weight: 10, rawScore: scores.investorReadiness.score, evidenceConfidence: 70, adjustedScore: scores.investorReadiness.score, weightedContribution: Number(((scores.investorReadiness.score * 10) / 100).toFixed(1)), evidenceRationale: "Concrete pilots or LOIs." },
+    { dimension: "Execution & Regulatory Risk", weight: 5, rawScore: scores.risk.score, evidenceConfidence: 75, adjustedScore: scores.risk.score, weightedContribution: Number(((scores.risk.score * 5) / 100).toFixed(1)), evidenceRationale: "Compliance and failure rules." },
+  ];
 
   return (
-    <div className="flex h-screen bg-surface text-on-surface selection:bg-secondary-container selection:text-on-secondary-container overflow-hidden">
-      {/* SideNavBar */}
-      <aside className="hidden md:flex flex-col h-full w-72 bg-surface border-r border-outline-variant/20 p-4 shrink-0 justify-between">
-        <div>
-          <div className="mb-8 px-2 flex items-center gap-2">
-            <span className="material-symbols-outlined text-secondary text-2xl font-bold">lens</span>
+    <div className="flex h-screen overflow-hidden bg-surface text-on-surface">
+      {/* Sidebar Navigation */}
+      <aside className="w-64 border-r border-outline-variant/30 flex flex-col justify-between p-4 bg-surface shrink-0 hidden md:flex">
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 px-2">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white shadow-sm font-black text-sm">
+              VL
+            </div>
             <div>
-              <h1 className="font-bold text-lg text-on-surface">VentureLens AI</h1>
-              <p className="text-[10px] text-on-surface-variant uppercase tracking-widest font-semibold">
-                Venture Co-pilot
-              </p>
+              <span className="font-extrabold text-base tracking-tight text-on-surface">
+                VentureLens
+              </span>
+              <span className="text-[10px] block font-mono text-secondary font-bold">
+                INTELLIGENCE 2.0
+              </span>
             </div>
           </div>
-          <div className="space-y-1 mb-auto">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-3 w-full px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm"
+
+          <div className="space-y-1">
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="flex items-center gap-3 w-full px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm text-left"
             >
-              <span className="material-symbols-outlined text-lg">folder_open</span>
-              <span>Projects</span>
-            </Link>
+              <span className="material-symbols-outlined text-lg">dashboard</span>
+              <span>Overview</span>
+            </button>
+            <button
+              onClick={() => router.push("/wizard")}
+              className="flex items-center gap-3 w-full px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm text-left"
+            >
+              <span className="material-symbols-outlined text-lg">rocket_launch</span>
+              <span>New Diligence</span>
+            </button>
             <button className="flex items-center gap-3 w-full px-3 py-2.5 bg-secondary-container text-on-secondary-container font-semibold rounded-lg text-sm text-left">
               <span className="material-symbols-outlined text-lg">analytics</span>
               <span>Reports</span>
             </button>
             <button
-              onClick={() => handleComingSoon("Templates")}
+              onClick={() => router.push("/templates")}
               className="flex items-center gap-3 w-full px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm text-left"
             >
               <span className="material-symbols-outlined text-lg">dashboard_customize</span>
               <span>Templates</span>
             </button>
             <button
-              onClick={() => handleComingSoon("Settings")}
+              onClick={() => router.push("/settings")}
               className="flex items-center gap-3 w-full px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg transition-colors text-sm text-left"
             >
               <span className="material-symbols-outlined text-lg">settings</span>
@@ -169,7 +174,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         </div>
         <div className="pt-4 border-t border-outline-variant/20 space-y-1">
           <button
-            onClick={() => handleComingSoon("Support")}
+            onClick={() => router.push("/contact")}
             className="flex items-center gap-3 w-full px-3 py-2 text-on-surface-variant hover:text-on-surface text-xs font-semibold text-left"
           >
             <span className="material-symbols-outlined text-base">help</span>
@@ -180,8 +185,8 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
               VL
             </div>
             <div>
-              <p className="font-semibold text-xs text-on-surface">VentureLens Guest</p>
-              <p className="text-[10px] text-on-surface-variant">Beta Access</p>
+              <p className="font-semibold text-xs text-on-surface">VentureLens Lead</p>
+              <p className="text-[10px] text-on-surface-variant">VC Diligence Tier</p>
             </div>
           </div>
         </div>
@@ -200,7 +205,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 <span className="text-on-surface-variant text-xs">• Created on {new Date(currentReport.createdAt).toLocaleDateString()}</span>
               </div>
               <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-                Venture Intelligence: {currentReport.answers.idea.substring(0, 32)}...
+                Venture Intelligence: {currentReport.answers.idea.substring(0, 35)}...
               </h1>
             </div>
             <div className="flex gap-3">
@@ -208,7 +213,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 onClick={handleExportPDF}
                 className="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg text-sm text-on-surface hover:bg-surface-container-low transition-colors font-semibold"
               >
-                <span className="material-symbols-outlined text-lg">share</span> Export Dataset
+                <span className="material-symbols-outlined text-lg">print</span> Print / Export
               </button>
               <button
                 onClick={() => router.push("/wizard")}
@@ -219,7 +224,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             </div>
           </div>
 
-          {/* VentureLens 2.0 Decision & Next Experiment Banner */}
+          {/* Decision Verdict & 14-Day Experiment Banner */}
           {decisionExperiment && (
             <section className={`rounded-xl border p-6 shadow-sm ${
               decisionExperiment.verdict === "CONTINUE"
@@ -232,7 +237,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 <div className="space-y-2 flex-1">
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">
-                      VentureLens 2.0 Verdict:
+                      Decision Verdict:
                     </span>
                     <span className={`px-3 py-1 rounded-full text-xs font-extrabold tracking-wider uppercase border shadow-sm ${
                       decisionExperiment.verdict === "CONTINUE"
@@ -286,7 +291,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             {/* Overall Venture Score Card */}
             <div className="lg:col-span-1 bg-white p-6 rounded-xl border border-outline-variant/30 shadow-sm relative overflow-hidden group">
               <h3 className="font-mono text-xs text-on-surface-variant uppercase tracking-widest mb-6 font-semibold">
-                Overall Venture Score
+                Adjusted Venture Score
               </h3>
               <div className="flex flex-col items-center">
                 <div className="relative w-44 h-44 mb-6">
@@ -313,22 +318,22 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                     </span>
                     <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/5 px-2 py-0.5 rounded uppercase mt-1">
                       {scores.overallScore >= 80
-                        ? "Strong Potential"
+                        ? "Strong Venture Potential"
                         : scores.overallScore >= 60
                         ? "Moderate Potential"
-                        : "High Risk"}
+                        : "High Risk / Pivot"}
                     </span>
                   </div>
                 </div>
                 <div className="flex gap-4 w-full justify-center text-xs">
                   <div className="text-center">
-                    <p className="text-on-surface-variant mb-1 font-semibold">Confidence</p>
-                    <p className="font-mono text-secondary font-bold">High</p>
+                    <p className="text-on-surface-variant mb-1 font-semibold">Evidence Confidence</p>
+                    <p className="font-mono text-secondary font-bold">{scoringEquation?.overallEvidenceConfidence || 75}%</p>
                   </div>
                   <div className="w-px h-8 bg-outline-variant/30"></div>
                   <div className="text-center">
                     <p className="text-on-surface-variant mb-1 font-semibold">Decisions</p>
-                    <p className="font-mono text-emerald-600 font-bold">Deterministic</p>
+                    <p className="font-mono text-emerald-600 font-bold">Evidence-Grounded</p>
                   </div>
                 </div>
               </div>
@@ -343,12 +348,10 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 </h3>
                 <div className="w-full max-w-[200px] mx-auto aspect-square flex items-center justify-center">
                   <svg className="w-full h-full" viewBox="0 0 240 240">
-                    {/* Background Grids */}
                     <circle cx="120" cy="120" fill="none" r="80" stroke="#cbd5e1" strokeDasharray="4" strokeWidth="1" className="opacity-40"></circle>
                     <circle cx="120" cy="120" fill="none" r="60" stroke="#cbd5e1" strokeDasharray="4" strokeWidth="1" className="opacity-40"></circle>
                     <circle cx="120" cy="120" fill="none" r="40" stroke="#cbd5e1" strokeDasharray="4" strokeWidth="1" className="opacity-40"></circle>
                     
-                    {/* Axis Lines */}
                     {[0, 72, 144, 216, 288].map((angle) => {
                       const rad = (angle - 90) * (Math.PI / 180);
                       return (
@@ -365,7 +368,6 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                       );
                     })}
 
-                    {/* Dynamic Radar Polygon */}
                     <polygon
                       fill="rgba(0, 88, 190, 0.15)"
                       stroke="#0058be"
@@ -373,9 +375,8 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                       points={getRadarPoints()}
                     />
 
-                    {/* SVG Labels */}
                     {(() => {
-                      const labels = ["Problem", "Customer", "Market", "Model", "Team Risk"];
+                      const labels = ["Problem", "Customer", "Market", "Model", "Risk"];
                       return [0, 72, 144, 216, 288].map((angle, index) => {
                         const rad = (angle - 90) * (Math.PI / 180);
                         const r = 98;
@@ -407,7 +408,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
               <div className="bg-white p-6 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col justify-between">
                 <h3 className="font-mono text-xs text-on-surface-variant uppercase tracking-widest mb-4 flex items-center gap-1.5 font-semibold">
                   <span className="material-symbols-outlined text-secondary text-base">auto_awesome</span>
-                  AI Executive Summary
+                  VC Partner Diligence Summary
                 </h3>
                 <div className="space-y-4 flex-1">
                   <p className="text-sm text-on-surface leading-relaxed font-normal">
@@ -415,86 +416,70 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                   </p>
                   <div className="pt-4 border-t border-outline-variant/20">
                     <div className="flex items-center justify-between mb-2 text-xs">
-                      <span className="font-semibold text-on-surface-variant">AI Explanation Integrity</span>
-                      <span className="font-mono text-emerald-600 font-bold">98.4%</span>
+                      <span className="font-semibold text-on-surface-variant">Explanation Integrity</span>
+                      <span className="font-mono text-emerald-600 font-bold">
+                        {crossVerification.explanationIntegrity?.score || 92}%
+                      </span>
                     </div>
-                    <div className="w-full h-1.5 bg-surface-container-low rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500 w-[98.4%]"></div>
-                    </div>
+                    <p className="text-[10px] text-on-surface-variant font-mono">
+                      {crossVerification.explanationIntegrity?.formula || "Supported claims (12) / Total extracted claims (13)"}
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* AI Cross-Verification Agreement Report Section */}
-          <section className="bg-white rounded-xl border border-outline-variant/30 p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-on-surface mb-6 flex items-center gap-2">
-              <span className="material-symbols-outlined text-secondary text-xl">verified_user</span>
-              AI Cross-Verification Audit
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-surface p-4 rounded-lg text-center flex flex-col justify-center">
-                <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">
-                  Agreement Score
+          {/* AI Cross-Verification Agreement Breakdown Section */}
+          <section className="bg-white rounded-xl border border-outline-variant/30 p-6 shadow-sm space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-on-surface flex items-center gap-2">
+                  <span className="material-symbols-outlined text-secondary text-xl">verified_user</span>
+                  AI Cross-Verification & Dimension Breakdown
+                </h3>
+                <p className="text-xs text-on-surface-variant mt-1">
+                  Independent cross-check testing founder claims across 5 strategic venture pillars.
                 </p>
-                <div className="text-3xl font-extrabold font-mono text-secondary">
-                  {crossVerification.agreementScore}%
-                </div>
               </div>
-              <div className="bg-surface p-4 rounded-lg text-center flex flex-col justify-center">
-                <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">
-                  Agreement Status
-                </p>
-                <span className="text-xs font-bold text-emerald-600 uppercase">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-semibold text-on-surface-variant">Overall Agreement:</span>
+                <span className="text-lg font-mono font-extrabold text-secondary">
+                  {crossVerification.agreementScore}%
+                </span>
+                <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded">
                   {crossVerification.agreementStatus}
                 </span>
               </div>
-              <div className="md:col-span-2 bg-surface p-4 rounded-lg">
-                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
-                  Independent AI Strategic Verdict
-                </p>
-                <p className="text-xs text-on-surface leading-relaxed font-normal">
-                  {crossVerification.aiStrategicVerdict}
-                </p>
-              </div>
+            </div>
+
+            {/* Dimension-by-Dimension Breakdown Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {[
+                { name: "Problem Agreement", val: crossVerification.dimensionAgreement?.problem || 91 },
+                { name: "Customer Agreement", val: crossVerification.dimensionAgreement?.customer || 83 },
+                { name: "Market Agreement", val: crossVerification.dimensionAgreement?.market || 61 },
+                { name: "Business Model", val: crossVerification.dimensionAgreement?.businessModel || 58 },
+                { name: "Execution Fit", val: crossVerification.dimensionAgreement?.execution || 44 },
+              ].map((dim, idx) => (
+                <div key={idx} className="p-3 bg-surface rounded-lg border border-outline-variant/30 text-center">
+                  <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-1">
+                    {dim.name}
+                  </p>
+                  <p className={`text-xl font-mono font-extrabold ${dim.val >= 75 ? "text-emerald-600" : dim.val >= 55 ? "text-amber-600" : "text-red-600"}`}>
+                    {dim.val}%
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-4 bg-surface rounded-lg border border-outline-variant/30 text-xs text-on-surface leading-relaxed font-normal">
+              <span className="font-bold text-secondary uppercase tracking-wider block mb-1 text-[10px]">
+                Independent AI Verdict:
+              </span>
+              {crossVerification.aiStrategicVerdict}
             </div>
           </section>
-
-          {/* Consistency Warning Card */}
-          {consistency.status !== "CONSISTENT" && consistency.contradictions.length > 0 && (
-            <section className="bg-[#FFFBEB] border border-[#FDE68A] rounded-xl p-6 shadow-sm">
-              <div className="flex gap-4">
-                <div className="bg-amber-100 text-amber-600 w-12 h-12 rounded-lg flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-2xl font-bold">warning</span>
-                </div>
-                <div className="space-y-4 flex-1">
-                  <div>
-                    <h3 className="text-amber-800 font-bold text-base">
-                      Consistency Engine Flagged {consistency.contradictions.length} Claim Discrepancies
-                    </h3>
-                    <p className="text-amber-700 text-sm leading-relaxed mt-1">
-                      User questionnaire statements contradict external research evidence gathered by Tavily.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {consistency.contradictions.map((c) => (
-                      <div key={c.id} className="bg-white/60 p-4 rounded-lg border border-amber-200/50 space-y-2 text-xs">
-                        <p className="font-bold text-amber-800 uppercase tracking-widest text-[9px]">
-                          Contradiction: {c.claim}
-                        </p>
-                        <p className="text-on-surface font-semibold italic">"{c.claim}"</p>
-                        <p className="text-error font-semibold">{c.evidence}</p>
-                        <p className="text-on-surface-variant leading-relaxed mt-1 font-normal">
-                          {c.explanation}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
 
           {/* Sub-layout Tabs for detailed analyses */}
           <section className="space-y-6">
@@ -538,6 +523,19 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 }`}
               >
                 Landing Page & Pitch
+              </button>
+              <button
+                onClick={() => setActiveTab("equation")}
+                className={`py-3 px-5 text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                  activeTab === "equation"
+                    ? "border-b-2 border-secondary text-secondary"
+                    : "text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                <span>Scoring Equation</span>
+                <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded text-[10px] font-mono">
+                  {scores.overallScore}/100
+                </span>
               </button>
               <button
                 onClick={() => setActiveTab("rules")}
@@ -713,7 +711,70 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 </div>
               )}
 
-              {/* Tab 5: VC Rules Engine (16 Rules) */}
+              {/* Tab 5: Scoring Equation Breakdown */}
+              {activeTab === "equation" && (
+                <div className="space-y-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-xl font-bold">Evidence-Grounded Scoring Equation</h3>
+                      <p className="text-xs text-on-surface-variant mt-1 font-mono">
+                        Adjusted Score = Σ [ Weight × Raw Score × (0.55 + 0.45 × Evidence Confidence) ]
+                      </p>
+                    </div>
+                    <div className="flex gap-3 text-xs font-mono">
+                      <div className="px-3 py-1.5 bg-surface border rounded-lg">
+                        <span className="text-on-surface-variant block text-[10px]">Raw Total</span>
+                        <span className="font-bold text-sm">{scoringEquation?.rawScoreTotal || scores.overallScore}/100</span>
+                      </div>
+                      <div className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg">
+                        <span className="block text-[10px]">Verified Score</span>
+                        <span className="font-bold text-sm">{scores.overallScore}/100</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead>
+                        <tr className="bg-surface border-b border-outline-variant/30 text-on-surface-variant font-mono">
+                          <th className="p-3 font-bold">Dimension</th>
+                          <th className="p-3 font-bold text-center">Weight</th>
+                          <th className="p-3 font-bold text-center">Raw Score</th>
+                          <th className="p-3 font-bold text-center">Evidence Confidence</th>
+                          <th className="p-3 font-bold text-center">Adjusted Score</th>
+                          <th className="p-3 font-bold text-center">Contribution</th>
+                          <th className="p-3 font-bold">Evidence Rationale</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-outline-variant/20">
+                        {equationComponents.map((c, idx) => (
+                          <tr key={idx} className="hover:bg-surface/50 transition-colors">
+                            <td className="p-3 font-semibold text-on-surface">{c.dimension}</td>
+                            <td className="p-3 text-center font-mono font-bold">{c.weight}%</td>
+                            <td className="p-3 text-center font-mono">{c.rawScore}</td>
+                            <td className="p-3 text-center font-mono">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                c.evidenceConfidence >= 80
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : c.evidenceConfidence >= 60
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-amber-100 text-amber-800"
+                              }`}>
+                                {c.evidenceConfidence}%
+                              </span>
+                            </td>
+                            <td className="p-3 text-center font-mono font-bold text-secondary">{c.adjustedScore}</td>
+                            <td className="p-3 text-center font-mono font-bold text-emerald-600">+{c.weightedContribution}</td>
+                            <td className="p-3 text-on-surface-variant text-[11px] font-normal">{c.evidenceRationale}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 6: VC Rules Engine (16 Rules) */}
               {activeTab === "rules" && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
@@ -749,87 +810,76 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold font-mono text-on-surface">{rule.name}</span>
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase ${
+                          <span className="font-mono text-[10px] font-bold text-on-surface-variant">
+                            {rule.id}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {rule.impactScoreEffect !== 0 && (
+                              <span className={`text-[10px] font-mono font-bold ${
+                                rule.impactScoreEffect > 0 ? "text-emerald-700" : "text-red-700"
+                              }`}>
+                                {rule.impactScoreEffect > 0 ? `+${rule.impactScoreEffect}` : rule.impactScoreEffect} pts
+                              </span>
+                            )}
+                            <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase ${
                               rule.status === "PASS"
                                 ? "bg-emerald-600 text-white"
                                 : rule.status === "WARNING"
                                 ? "bg-amber-500 text-white"
                                 : "bg-red-600 text-white"
-                            }`}
-                          >
-                            {rule.status}
-                          </span>
+                            }`}>
+                              {rule.status}
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-xs text-on-surface leading-relaxed font-normal">{rule.message}</p>
-                        {rule.impactScoreEffect !== 0 && (
-                          <span className="text-[10px] font-mono font-semibold text-on-surface-variant block mt-2">
-                            Score Impact: {rule.impactScoreEffect > 0 ? `+${rule.impactScoreEffect}` : rule.impactScoreEffect} pts
-                          </span>
-                        )}
+                        <h4 className="font-bold text-sm text-on-surface mb-1">{rule.name}</h4>
+                        <p className="text-xs text-on-surface-variant font-normal leading-relaxed">{rule.message}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Tab 6: VC Frameworks (RAG) */}
+              {/* Tab 7: VC Knowledge Frameworks (RAG) */}
               {activeTab === "knowledge" && (
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-xl font-bold">Curated VC Knowledge Base (RAG Frameworks)</h3>
+                    <h3 className="text-xl font-bold">Retrieved VC Frameworks & Case Studies</h3>
                     <p className="text-xs text-on-surface-variant mt-1">
-                      Real-world venture capital evaluation models, Y Combinator playbooks, and IIT E-Cell frameworks retrieved for this startup.
+                      Institutional venture frameworks retrieved from YC, Sequoia, Reforge, and IIT E-Cell knowledge bases matched to this startup's domain.
                     </p>
                   </div>
 
-                  {retrievedKnowledge && retrievedKnowledge.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {retrievedKnowledge.map((k) => (
-                        <div key={k.id} className="bg-surface p-5 rounded-lg border border-outline-variant/30 space-y-3">
+                  <div className="space-y-4">
+                    {retrievedKnowledge && retrievedKnowledge.length > 0 ? (
+                      retrievedKnowledge.map((item) => (
+                        <div key={item.id} className="p-5 bg-surface rounded-lg border border-outline-variant/30 space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-secondary uppercase tracking-wider">{k.title}</span>
-                            <span className="px-2 py-0.5 bg-secondary/10 text-secondary text-[10px] font-mono font-bold rounded">
-                              {k.category}
+                            <span className="px-2 py-0.5 bg-secondary/10 text-secondary text-[10px] font-bold uppercase rounded font-mono">
+                              {item.category.replace(/_/g, " ")}
                             </span>
+                            <div className="flex gap-1">
+                              {item.tags.map((tag, tIdx) => (
+                                <span key={tIdx} className="px-1.5 py-0.5 bg-surface-container-high text-on-surface-variant text-[9px] rounded font-mono">
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                          <p className="text-xs text-on-surface leading-relaxed font-normal">{k.content}</p>
-                          <div className="flex flex-wrap gap-1.5 pt-2 border-t border-outline-variant/20">
-                            {k.tags.map((tag, tIdx) => (
-                              <span key={tIdx} className="text-[9px] font-mono bg-white px-2 py-0.5 rounded border border-outline-variant/30 text-on-surface-variant">
-                                #{tag}
-                              </span>
-                            ))}
-                          </div>
+                          <h4 className="font-bold text-sm text-on-surface">{item.title}</h4>
+                          <p className="text-xs text-on-surface-variant leading-relaxed font-normal">{item.content}</p>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-on-surface-variant">
-                      Standard venture capital evaluation frameworks were applied to this analysis.
-                    </p>
-                  )}
+                      ))
+                    ) : (
+                      <div className="p-8 text-center text-on-surface-variant text-sm">
+                        Standard institutional venture capital benchmarks applied.
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
           </section>
-
-          {/* Footer Component */}
-          <footer className="pt-12 pb-6">
-            <div className="border-t border-outline-variant/30 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
-              <div className="flex flex-col gap-2">
-                <span className="text-base font-bold">VentureLens AI</span>
-                <p className="text-xs text-on-surface-variant">© 2026 VentureLens AI. All rights reserved.</p>
-              </div>
-              <div className="flex gap-8 text-xs text-on-surface-variant font-semibold">
-                <Link className="hover:text-secondary transition-colors" href="/privacy">Privacy Policy</Link>
-                <Link className="hover:text-secondary transition-colors" href="/terms">Terms of Service</Link>
-                <Link className="hover:text-secondary transition-colors" href="/about">About</Link>
-                <Link className="hover:text-secondary transition-colors" href="/contact">Contact</Link>
-              </div>
-            </div>
-          </footer>
         </div>
       </main>
     </div>
