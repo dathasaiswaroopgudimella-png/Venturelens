@@ -2,95 +2,90 @@ import Link from "next/link";
 
 export default function AboutPage() {
   return (
-    <div className="bg-[#f8fafc] min-h-screen text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900">
-      {/* Navigation Header */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div className="flex justify-between items-center px-6 lg:px-12 h-20 max-w-[1440px] mx-auto">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-md">
-              VL
-            </div>
-            <div>
-              <span className="font-extrabold text-xl tracking-tight text-slate-900">
-                VentureLens
-              </span>
-              <span className="text-[10px] block font-semibold text-blue-600 tracking-wider uppercase">
-                Venture Intelligence
-              </span>
-            </div>
+    <div className="bg-surface min-h-screen text-on-surface font-sans selection:bg-secondary-container selection:text-on-secondary-container">
+      {/* TopNavBar */}
+      <header className="docked full-width top-0 sticky z-50 glass-header border-b border-outline-variant/30 shadow-sm">
+        <div className="flex justify-between items-center px-8 h-16 w-full max-w-[1440px] mx-auto">
+          <Link href="/" className="font-headline-md text-xl font-bold tracking-tight text-on-surface flex items-center gap-2">
+            <span>VentureLens</span>
+            <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-secondary/10 text-secondary border border-secondary/20">
+              Venture Intelligence
+            </span>
           </Link>
-          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
-            <Link href="/platform" className="hover:text-blue-600 transition-colors">Platform</Link>
-            <Link href="/features" className="hover:text-blue-600 transition-colors">Features</Link>
-            <Link href="/pricing" className="hover:text-blue-600 transition-colors">Pricing</Link>
-            <Link href="/about" className="text-blue-600 border-b-2 border-blue-600 pb-1">About Founder</Link>
-            <Link href="/contact" className="hover:text-blue-600 transition-colors">Contact</Link>
+
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
+            <Link href="/platform" className="text-on-surface-variant hover:text-on-surface transition-colors">Platform</Link>
+            <Link href="/features" className="text-on-surface-variant hover:text-on-surface transition-colors">Features</Link>
+            <Link href="/pricing" className="text-on-surface-variant hover:text-on-surface transition-colors">Pricing</Link>
+            <Link href="/templates" className="text-on-surface-variant hover:text-on-surface transition-colors">Templates</Link>
+            <Link href="/about" className="text-secondary border-b-2 border-secondary pb-1">About</Link>
           </nav>
+
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="text-slate-600 hover:text-slate-900 text-sm font-semibold transition-colors">Dashboard</Link>
-            <Link href="/wizard" className="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-blue-700 transition-all active:scale-95 shadow-sm">
-              Launch Diligence
+            <Link href="/dashboard" className="text-secondary hover:opacity-80 transition-opacity text-sm font-semibold">Dashboard</Link>
+            <Link href="/wizard" className="bg-primary text-on-primary px-5 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-all active:scale-95 shadow-sm">
+              Start Free Diligence
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="py-16">
+      <main className="py-20 max-w-5xl mx-auto px-8">
         {/* Mission Section */}
-        <section className="max-w-4xl mx-auto px-6 lg:px-8 text-center mb-20">
-          <span className="inline-block px-4 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-widest rounded-full border border-blue-200 mb-6">
-            Our Mission & Vision
+        <section className="text-center mb-20 max-w-3xl mx-auto">
+          <span className="inline-block px-3 py-1 bg-secondary/10 text-secondary text-xs font-mono font-bold uppercase tracking-widest rounded-full mb-6">
+            Our Mission
           </span>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 mb-6 leading-tight">
-            Replacing Subjective Guesswork with <span className="text-blue-600">Venture Intelligence</span>.
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-on-surface mb-6 leading-tight">
+            Replacing Subjective Guesswork with <span className="text-secondary">Venture Intelligence</span>.
           </h1>
-          <p className="text-slate-600 text-lg leading-relaxed max-w-3xl mx-auto font-normal">
-            Early-stage venture validation is frequently clouded by cognitive bias, vanity metrics, and generic AI hallucinations. VentureLens was founded to provide institutional-grade due diligence, deterministic heuristic rules, and transparent mathematical scoring for every founder and venture investor.
+          <p className="text-on-surface-variant text-lg leading-relaxed font-normal">
+            Early-stage startup evaluation is frequently clouded by hype and generic AI advice. VentureLens applies structured rules, real market data, and cross-verified AI to give founders access to the same rigorous analysis top-tier VCs apply internally.
           </p>
         </section>
 
-        {/* Founder Profile Spotlight */}
-        <section className="max-w-5xl mx-auto px-6 lg:px-8 mb-20">
-          <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 shadow-sm relative overflow-hidden">
+        {/* Founder Spotlight */}
+        <section className="mb-20">
+          <div className="bg-white rounded-2xl border border-outline-variant/30 p-8 md:p-12 micro-shadow">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-              <div className="w-32 h-32 rounded-2xl bg-blue-600 text-white text-5xl font-black flex items-center justify-center shadow-lg shrink-0">
+              <div className="w-28 h-28 md:w-36 md:h-36 rounded-xl bg-secondary text-white text-4xl md:text-5xl font-black flex items-center justify-center shadow-lg shrink-0 border border-white/20">
                 DS
               </div>
 
               <div className="space-y-4 text-center md:text-left flex-1">
                 <div>
-                  <span className="text-xs font-bold text-blue-600 uppercase tracking-widest block mb-1">
-                    Founder Profile
+                  <span className="font-mono text-xs text-secondary uppercase tracking-widest block mb-1 font-semibold">
+                    Founder
                   </span>
-                  <h2 className="text-3xl font-extrabold text-slate-900">
+                  <h2 className="text-3xl font-extrabold text-on-surface">
                     Datha Sai Swaroop
                   </h2>
-                  <p className="text-base font-semibold text-slate-700 mt-1">
+                  <p className="text-sm font-semibold text-emerald-accent mt-0.5">
                     Founder · IIT BHU
                   </p>
                 </div>
 
-                <p className="text-slate-600 text-sm sm:text-base leading-relaxed font-normal">
+                <p className="text-on-surface-variant text-sm sm:text-base leading-relaxed font-normal">
                   Datha Sai Swaroop leads VentureLens with an engineering foundation from IIT BHU. Passionate about startup ecosystems, decision systems, and algorithmic evaluation, Datha designed VentureLens to bridge the gap between simple chat prompts and institutional VC diligence engines.
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-slate-100 text-xs">
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                    <span className="font-bold text-slate-500 block uppercase text-[10px]">Email</span>
-                    <a href="mailto:dathasaiswaroopgudimella@gmail.com" className="text-blue-600 font-semibold truncate block mt-0.5 hover:underline">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-outline-variant/20 text-xs">
+                  <div className="p-3 bg-surface rounded-lg border border-outline-variant/30">
+                    <span className="font-bold text-on-surface-variant block uppercase text-[10px]">Email</span>
+                    <a href="mailto:dathasaiswaroopgudimella@gmail.com" className="text-secondary font-semibold truncate block mt-0.5 hover:underline">
                       dathasaiswaroopgudimella@gmail.com
                     </a>
                   </div>
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                    <span className="font-bold text-slate-500 block uppercase text-[10px]">Phone</span>
-                    <a href="tel:+919121146369" className="text-blue-600 font-semibold block mt-0.5 hover:underline">
+                  <div className="p-3 bg-surface rounded-lg border border-outline-variant/30">
+                    <span className="font-bold text-on-surface-variant block uppercase text-[10px]">Phone</span>
+                    <a href="tel:+919121146369" className="text-secondary font-semibold block mt-0.5 hover:underline">
                       +91 9121146369
                     </a>
                   </div>
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                    <span className="font-bold text-slate-500 block uppercase text-[10px]">LinkedIn</span>
-                    <a href="https://www.linkedin.com/in/datha-sai-swaroop-gudimella-ab4184371" target="_blank" rel="noopener noreferrer" className="text-blue-600 font-semibold block mt-0.5 hover:underline truncate">
-                      Datha Sai Swaroop ↗
+                  <div className="p-3 bg-surface rounded-lg border border-outline-variant/30">
+                    <span className="font-bold text-on-surface-variant block uppercase text-[10px]">LinkedIn</span>
+                    <a href="https://www.linkedin.com/in/datha-sai-swaroop-gudimella-ab4184371" target="_blank" rel="noopener noreferrer" className="text-secondary font-semibold block mt-0.5 hover:underline truncate">
+                      LinkedIn Profile ↗
                     </a>
                   </div>
                 </div>
@@ -100,16 +95,16 @@ export default function AboutPage() {
                     href="https://www.linkedin.com/in/datha-sai-swaroop-gudimella-ab4184371"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors shadow-sm"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-secondary hover:opacity-90 text-white text-xs font-bold rounded-lg transition-all shadow-sm"
                   >
                     <span>Connect on LinkedIn</span>
                     <span className="material-symbols-outlined text-base">arrow_forward</span>
                   </a>
                   <Link
                     href="/contact"
-                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-colors"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold rounded-lg transition-colors border border-outline-variant/40"
                   >
-                    <span>Send Message</span>
+                    <span>Contact Us</span>
                   </Link>
                 </div>
               </div>
@@ -117,32 +112,26 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Why VentureLens Section */}
-        <section className="max-w-4xl mx-auto px-6 lg:px-8 mb-20">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Why We Built VentureLens</h2>
-            <p className="text-slate-600 text-sm mt-2">The philosophy behind our decision intelligence platform.</p>
-          </div>
-
-          <div className="space-y-6 text-slate-700 text-base leading-relaxed">
-            <div className="p-8 bg-white rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="font-bold text-slate-900 text-lg mb-2">1. Eliminating Confirmation Bias</h3>
-              <p className="text-sm text-slate-600 leading-relaxed font-normal">
-                Founders naturally fall in love with their solutions rather than the problem. VentureLens forces adversarial thesis testing, looking at market sizing, willingness-to-pay friction, and incumbent moats before valuable engineering cycles are expended.
+        {/* Why We Built VentureLens */}
+        <section className="space-y-6">
+          <h2 className="text-2xl font-bold tracking-tight text-on-surface mb-6">Why We Built VentureLens</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-6 bg-white rounded-xl border border-outline-variant/30 micro-shadow">
+              <h3 className="font-bold text-base mb-2">1. Eliminating Bias</h3>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Founders often fall in love with solutions. VentureLens forces adversarial thesis testing against market reality.
               </p>
             </div>
-
-            <div className="p-8 bg-white rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="font-bold text-slate-900 text-lg mb-2">2. Transparent Mathematical Scoring</h3>
-              <p className="text-sm text-slate-600 leading-relaxed font-normal">
-                Generic LLMs produce arbitrary scores. VentureLens calculates weighted equation components across 8 venture pillars, multiplying raw scores by evidence confidence to reflect commercial reality.
+            <div className="p-6 bg-white rounded-xl border border-outline-variant/30 micro-shadow">
+              <h3 className="font-bold text-base mb-2">2. Transparent Math</h3>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Scores are calculated via transparent mathematical equations across 8 dimensions multiplied by evidence confidence.
               </p>
             </div>
-
-            <div className="p-8 bg-white rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="font-bold text-slate-900 text-lg mb-2">3. Actionable 14-Day Validation Roadmaps</h3>
-              <p className="text-sm text-slate-600 leading-relaxed font-normal">
-                Instead of leaving you with high-level advice, VentureLens gives you a prioritized technical MVP roadmap and a targeted 14-day experiment to test willingness-to-pay with real economic buyers.
+            <div className="p-6 bg-white rounded-xl border border-outline-variant/30 micro-shadow">
+              <h3 className="font-bold text-base mb-2">3. Actionable Roadmaps</h3>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Provides a concrete 14-day validation experiment to test willingness-to-pay before spending engineering capital.
               </p>
             </div>
           </div>
@@ -150,11 +139,8 @@ export default function AboutPage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-slate-950 text-slate-400 py-12 border-t border-slate-800 text-xs text-center">
-        <div className="max-w-[1440px] mx-auto px-6 space-y-2">
-          <p>© 2026 VentureLens AI. Founded by Datha Sai Swaroop (IIT BHU). All rights reserved.</p>
-          <p className="text-slate-500">Contact: dathasaiswaroopgudimella@gmail.com · +91 9121146369</p>
-        </div>
+      <footer className="bg-white border-t border-outline-variant/30 py-8 text-center text-xs text-on-surface-variant">
+        <p>© 2026 VentureLens AI. All rights reserved.</p>
       </footer>
     </div>
   );

@@ -4,120 +4,114 @@ export const dynamic = "force-static";
 
 export default function PlatformPage() {
   return (
-    <div className="bg-[#f8fafc] min-h-screen text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900">
-      {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div className="flex justify-between items-center px-6 lg:px-12 h-20 max-w-[1440px] mx-auto">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-md">
-              VL
-            </div>
-            <div>
-              <span className="font-extrabold text-xl tracking-tight text-slate-900">
-                VentureLens
-              </span>
-              <span className="text-[10px] block font-semibold text-blue-600 tracking-wider uppercase">
-                Venture Intelligence
-              </span>
-            </div>
+    <div className="bg-surface min-h-screen text-on-surface font-sans selection:bg-secondary-container selection:text-on-secondary-container">
+      {/* TopNavBar */}
+      <header className="docked full-width top-0 sticky z-50 glass-header border-b border-outline-variant/30 shadow-sm">
+        <div className="flex justify-between items-center px-8 h-16 w-full max-w-[1440px] mx-auto">
+          <Link href="/" className="font-headline-md text-xl font-bold tracking-tight text-on-surface flex items-center gap-2">
+            <span>VentureLens</span>
+            <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-secondary/10 text-secondary border border-secondary/20">
+              Venture Intelligence
+            </span>
           </Link>
-          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
-            <Link href="/platform" className="text-blue-600 border-b-2 border-blue-600 pb-1">Platform</Link>
-            <Link href="/features" className="hover:text-blue-600 transition-colors">Features</Link>
-            <Link href="/pricing" className="hover:text-blue-600 transition-colors">Pricing</Link>
-            <Link href="/about" className="hover:text-blue-600 transition-colors">About Founder</Link>
-            <Link href="/contact" className="hover:text-blue-600 transition-colors">Contact</Link>
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
+            <Link href="/platform" className="text-secondary border-b-2 border-secondary pb-1">Platform</Link>
+            <Link href="/features" className="text-on-surface-variant hover:text-on-surface transition-colors">Features</Link>
+            <Link href="/pricing" className="text-on-surface-variant hover:text-on-surface transition-colors">Pricing</Link>
+            <Link href="/templates" className="text-on-surface-variant hover:text-on-surface transition-colors">Templates</Link>
+            <Link href="/about" className="text-on-surface-variant hover:text-on-surface transition-colors">About</Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="text-slate-600 hover:text-slate-900 text-sm font-semibold transition-colors">Dashboard</Link>
+            <Link href="/dashboard" className="text-secondary hover:opacity-80 transition-opacity text-sm font-semibold">Dashboard</Link>
             <Link
               href="/wizard"
-              className="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-blue-700 transition-all active:scale-95 shadow-sm"
+              className="bg-primary text-on-primary px-5 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-all active:scale-95 shadow-sm"
             >
-              Launch Diligence
+              Start Free Diligence
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-16">
+      <main className="max-w-5xl mx-auto px-8 py-16">
         <div className="text-center mb-16 max-w-3xl mx-auto">
-          <span className="inline-block px-4 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-widest rounded-full border border-blue-200 mb-6">
-            Platform Infrastructure
-          </span>
-          <h1 className="text-4xl sm:text-5xl font-extrabold mb-6 tracking-tight text-slate-900">Enterprise Diligence Platform</h1>
-          <p className="text-lg text-slate-600 leading-relaxed font-normal">
-            Understand how our deterministic pipeline, evidence scoring equations, and high-performance inference engine operate at scale.
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-accent/10 border border-emerald-accent/20 rounded-full mb-6">
+            <span className="font-mono text-xs text-emerald-accent font-semibold uppercase tracking-wider">
+              Platform Architecture
+            </span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-6 tracking-tight">Enterprise Diligence Platform</h1>
+          <p className="text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
+            Understand the underpinnings of our deterministic analysis pipeline, scoring equations, and high-performance inference engine.
           </p>
         </div>
 
         <div className="space-y-12">
           
-          {/* Section 1: Architecture Overview */}
-          <div className="bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-            <h2 className="text-2xl font-bold text-slate-900">1. Dual-Zone Evaluation Architecture</h2>
-            <p className="text-sm text-slate-600 leading-relaxed font-normal">
+          {/* Section 1: Dual-Zone Architecture */}
+          <div className="bg-white p-8 rounded-xl border border-outline-variant/30 micro-shadow space-y-6">
+            <h2 className="text-2xl font-bold text-on-surface">1. Dual-Zone Evaluation Architecture</h2>
+            <p className="text-sm text-on-surface-variant leading-relaxed">
               VentureLens divides analysis into two independent isolation zones: a deterministic mathematical engine that computes logic rule consistency and weighted scoring equations, and an independent adversarial artificial intelligence model that challenges assumptions against empirical market realities.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center text-xs">
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
-                <span className="font-bold text-blue-600 block uppercase text-[10px]">Zone 1: Ingestion</span>
-                <p className="font-bold text-slate-900">PDF / PPTX / Forms</p>
-                <p className="text-[11px] text-slate-500 font-normal">Multi-layer text extraction</p>
+              <div className="p-4 bg-surface rounded-lg border border-outline-variant/30 space-y-1">
+                <span className="font-bold text-secondary block uppercase text-[10px]">Zone 1: Ingestion</span>
+                <p className="font-bold text-on-surface">PDF / PPTX / Forms</p>
+                <p className="text-[11px] text-on-surface-variant">Multi-layer text extraction</p>
               </div>
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
-                <span className="font-bold text-blue-600 block uppercase text-[10px]">Zone 2: Deterministic</span>
-                <p className="font-bold text-slate-900">16 VC Logic Gates</p>
-                <p className="text-[11px] text-slate-500 font-normal">Heuristic rule validation</p>
+              <div className="p-4 bg-surface rounded-lg border border-outline-variant/30 space-y-1">
+                <span className="font-bold text-secondary block uppercase text-[10px]">Zone 2: Deterministic</span>
+                <p className="font-bold text-on-surface">16 VC Logic Gates</p>
+                <p className="text-[11px] text-on-surface-variant">Heuristic rule validation</p>
               </div>
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
-                <span className="font-bold text-blue-600 block uppercase text-[10px]">Zone 3: Equations</span>
-                <p className="font-bold text-slate-900">Evidence Weighting</p>
-                <p className="text-[11px] text-slate-500 font-normal">Raw × Confidence math</p>
+              <div className="p-4 bg-surface rounded-lg border border-outline-variant/30 space-y-1">
+                <span className="font-bold text-secondary block uppercase text-[10px]">Zone 3: Equations</span>
+                <p className="font-bold text-on-surface">Evidence Weighting</p>
+                <p className="text-[11px] text-on-surface-variant">Raw × Confidence math</p>
               </div>
-              <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200 space-y-1">
-                <span className="font-bold text-blue-700 block uppercase text-[10px]">Zone 4: Adversarial</span>
-                <p className="font-bold text-blue-900">5-Pillar AI Audit</p>
-                <p className="text-[11px] text-blue-700 font-normal">Final VC verdict & MVP</p>
+              <div className="p-4 bg-secondary-container rounded-lg border border-secondary/20 space-y-1">
+                <span className="font-bold text-secondary block uppercase text-[10px]">Zone 4: Adversarial</span>
+                <p className="font-bold text-on-secondary-container">5-Pillar AI Audit</p>
+                <p className="text-[11px] text-on-secondary-container">Final VC verdict & MVP</p>
               </div>
             </div>
           </div>
 
-          {/* Section 2: Security & Data Privacy */}
-          <div className="bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-            <h2 className="text-2xl font-bold text-slate-900">2. Security, Isolation & IP Protection</h2>
-            <p className="text-sm text-slate-600 leading-relaxed font-normal">
+          {/* Section 2: Security & Privacy */}
+          <div className="bg-white p-8 rounded-xl border border-outline-variant/30 micro-shadow space-y-6">
+            <h2 className="text-2xl font-bold text-on-surface">2. Security & Data Privacy</h2>
+            <p className="text-sm text-on-surface-variant leading-relaxed">
               Founder pitch decks and proprietary startup concepts are protected with enterprise encryption standards. No uploaded deck data is used to train public foundational models.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-600">
-              <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200">
-                <span className="font-bold text-slate-900 block mb-1 text-sm">TLS 1.3 & AES-256</span>
-                <p className="leading-relaxed font-normal">All network payloads are encrypted in transit and at rest with military-grade standards.</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-on-surface-variant">
+              <div className="p-4 bg-surface rounded-lg border border-outline-variant/20">
+                <span className="font-bold text-on-surface block mb-1">TLS 1.3 & AES-256</span>
+                <p className="leading-relaxed">All network payloads are encrypted in transit and at rest with military-grade standards.</p>
               </div>
-              <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200">
-                <span className="font-bold text-slate-900 block mb-1 text-sm">Zero Model Training</span>
-                <p className="leading-relaxed font-normal">Your intellectual property, patents, and business ideas are never retained for model fine-tuning.</p>
+              <div className="p-4 bg-surface rounded-lg border border-outline-variant/20">
+                <span className="font-bold text-on-surface block mb-1">Zero Model Training</span>
+                <p className="leading-relaxed">Your intellectual property, patents, and business ideas are never retained for model fine-tuning.</p>
               </div>
-              <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200">
-                <span className="font-bold text-slate-900 block mb-1 text-sm">Tenant Isolation</span>
-                <p className="leading-relaxed font-normal">Strict row-level security ensures your reports are only accessible to authorized sessions.</p>
+              <div className="p-4 bg-surface rounded-lg border border-outline-variant/20">
+                <span className="font-bold text-on-surface block mb-1">Tenant Isolation</span>
+                <p className="leading-relaxed">Strict row-level security ensures your reports are only accessible to authorized sessions.</p>
               </div>
             </div>
           </div>
 
-          {/* Section 3: Enterprise Deployments */}
-          <div className="bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-            <h2 className="text-2xl font-bold text-slate-900">3. Accelerator & Institutional Deployment</h2>
-            <p className="text-sm text-slate-600 leading-relaxed font-normal">
+          {/* Section 3: Enterprise Deployment */}
+          <div className="bg-white p-8 rounded-xl border border-outline-variant/30 micro-shadow space-y-6">
+            <h2 className="text-2xl font-bold text-on-surface">3. Accelerator & Institutional Deployment</h2>
+            <p className="text-sm text-on-surface-variant leading-relaxed">
               For university incubators, venture capital funds, and angel syndicates screening hundreds of startup applications monthly, VentureLens offers custom cohort evaluation pipelines and automated scoring dashboards.
             </p>
-            <div className="pt-2">
+            <div className="flex justify-start">
               <Link
                 href="/contact"
-                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl text-xs transition-colors shadow-sm"
+                className="bg-primary text-on-primary px-6 py-2.5 rounded-lg text-xs font-bold hover:opacity-90 transition-all active:scale-95 shadow-sm inline-block"
               >
-                <span>Contact Founder for Enterprise Pilots</span>
-                <span className="material-symbols-outlined text-base">arrow_forward</span>
+                Inquire About Enterprise Deployments
               </Link>
             </div>
           </div>
@@ -126,11 +120,8 @@ export default function PlatformPage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-slate-950 text-slate-400 py-12 border-t border-slate-800 text-xs text-center">
-        <div className="max-w-[1440px] mx-auto px-6 space-y-2">
-          <p>© 2026 VentureLens AI. Founded by Datha Sai Swaroop (IIT BHU). All rights reserved.</p>
-          <p className="text-slate-500">Contact: dathasaiswaroopgudimella@gmail.com · +91 9121146369</p>
-        </div>
+      <footer className="bg-white border-t border-outline-variant/30 py-8 text-center text-xs text-on-surface-variant mt-16">
+        <p>© 2026 VentureLens AI. All rights reserved.</p>
       </footer>
     </div>
   );

@@ -23,71 +23,66 @@ export default function LandingPage() {
         body: JSON.stringify(formData),
       });
       if (res.ok) {
-        toast.success("Message sent to Datha Sai Swaroop!", {
+        toast.success("Message sent successfully!", {
           description: "Thank you for reaching out. We will get back to you shortly.",
         });
         setFormData({ name: "", email: "", message: "" });
         setContactModalOpen(false);
       } else {
-        toast.error("Failed to send message. Please email dathasaiswaroopgudimella@gmail.com directly.");
+        toast.error("Failed to send message. Please email directly.");
       }
     } catch {
-      toast.error("Network error. Please email dathasaiswaroopgudimella@gmail.com directly.");
+      toast.error("Network error. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900">
-      {/* Navigation Bar */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div className="flex justify-between items-center px-6 lg:px-12 h-20 max-w-[1440px] mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-md">
-              VL
-            </div>
-            <div>
-              <span className="font-extrabold text-xl tracking-tight text-slate-900">
-                VentureLens
-              </span>
-              <span className="text-[10px] block font-semibold text-blue-600 tracking-wider uppercase">
-                Venture Intelligence
-              </span>
-            </div>
-          </div>
+    <div className="bg-surface min-h-screen text-on-surface font-sans selection:bg-secondary-container selection:text-on-secondary-container">
+      {/* Top Navigation Bar */}
+      <header className="docked full-width top-0 sticky z-50 glass-header border-b border-outline-variant/30 shadow-sm">
+        <div className="flex justify-between items-center px-8 h-16 w-full max-w-[1440px] mx-auto">
+          <Link href="/" className="font-headline-md text-xl font-bold tracking-tight text-on-surface flex items-center gap-2">
+            <span>VentureLens</span>
+            <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-secondary/10 text-secondary border border-secondary/20">
+              Venture Intelligence
+            </span>
+          </Link>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
-            <Link href="/platform" className="hover:text-blue-600 transition-colors">
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
+            <Link className="text-on-surface-variant hover:text-on-surface transition-colors" href="/platform">
               Platform
             </Link>
-            <Link href="/features" className="hover:text-blue-600 transition-colors">
+            <Link className="text-on-surface-variant hover:text-on-surface transition-colors" href="/features">
               Features
             </Link>
-            <Link href="/pricing" className="hover:text-blue-600 transition-colors">
+            <Link className="text-on-surface-variant hover:text-on-surface transition-colors" href="/pricing">
               Pricing
             </Link>
-            <Link href="/about" className="hover:text-blue-600 transition-colors">
-              About Founder
+            <Link className="text-on-surface-variant hover:text-on-surface transition-colors" href="/templates">
+              Templates
             </Link>
-            <Link href="/contact" className="hover:text-blue-600 transition-colors">
-              Contact
+            <Link className="text-on-surface-variant hover:text-on-surface transition-colors" href="/about">
+              About
             </Link>
           </nav>
 
           <div className="flex items-center gap-4">
             <button
               onClick={() => setContactModalOpen(true)}
-              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              className="text-on-surface-variant hover:text-on-surface text-sm font-semibold transition-colors"
             >
-              <span className="material-symbols-outlined text-base">mail</span>
-              Contact Founder
+              Contact
             </button>
+            <Link href="/dashboard" className="text-secondary hover:opacity-80 transition-opacity text-sm font-semibold">
+              Dashboard
+            </Link>
             <Link
               href="/wizard"
-              className="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95"
+              className="bg-primary text-on-primary px-5 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-all active:scale-95 shadow-sm"
             >
-              Launch Diligence
+              Start Free Diligence
             </Link>
           </div>
         </div>
@@ -95,270 +90,295 @@ export default function LandingPage() {
 
       <main>
         {/* Hero Section */}
-        <section className="relative pt-20 pb-28 overflow-hidden bg-gradient-to-b from-white via-slate-50 to-[#f8fafc]">
-          <div className="max-w-[1440px] mx-auto px-6 lg:px-12 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 border border-blue-200 rounded-full mb-8 shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-xs text-blue-800 font-bold uppercase tracking-wider">
-                Venture Intelligence Startup Platform
+        <section className="relative pt-24 pb-32 overflow-hidden bg-surface">
+          <div className="relative z-10 max-w-[1440px] mx-auto px-8 text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-accent/10 border border-emerald-accent/20 rounded-full mb-8">
+              <span className="w-2 h-2 rounded-full bg-emerald-accent animate-pulse"></span>
+              <span className="font-mono text-xs text-emerald-accent font-semibold uppercase tracking-wider">
+                Venture Intelligence 2.0
               </span>
             </div>
 
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-slate-900 max-w-5xl mx-auto tracking-tight leading-[1.1] mb-8">
-              Institutional Due Diligence for <span className="text-blue-600">Serious Startups</span> & Investors.
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 max-w-5xl mx-auto tracking-tight leading-tight">
+              Institutional Due Diligence for <span className="text-secondary">Serious Startups</span>.
             </h1>
 
-            <p className="text-lg sm:text-xl text-slate-600 max-w-3xl mx-auto mb-10 leading-relaxed font-normal">
-              Move beyond generic chatbot guesses. VentureLens stress-tests your venture thesis with transparent mathematical scoring equations, 16 deterministic venture capital logic rules, and 5-pillar adversarial cross-verification in under 20 seconds.
+            <p className="text-lg md:text-xl text-on-surface-variant max-w-3xl mx-auto mb-10 font-normal leading-relaxed">
+              Move beyond generic chatbot guesses. VentureLens stress-tests your venture thesis with transparent mathematical scoring equations, 16 deterministic venture capital rules, and 5-pillar adversarial cross-verification in under 20 seconds.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/wizard"
-                className="w-full sm:w-auto bg-blue-600 text-white px-9 py-4 rounded-xl text-lg font-bold hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-3"
+                className="bg-primary text-on-primary px-8 py-4 rounded-lg text-lg font-bold hover:opacity-90 transition-all macro-shadow active:scale-95 flex items-center gap-2"
               >
-                <span>Launch Free Diligence</span>
+                <span>Launch Free Analysis</span>
                 <span className="material-symbols-outlined text-xl">arrow_forward</span>
               </Link>
               <button
-                onClick={() => setContactModalOpen(true)}
-                className="w-full sm:w-auto bg-white border border-slate-300 text-slate-800 px-8 py-4 rounded-xl text-lg font-bold hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center gap-2"
+                onClick={() => {
+                  const el = document.getElementById("methodology-engine");
+                  el?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="bg-white border border-outline-variant/50 text-primary px-8 py-4 rounded-lg text-lg font-bold hover:bg-surface-container-low transition-all"
               >
-                <span className="material-symbols-outlined text-blue-600 text-xl">person</span>
-                <span>Connect with Founder</span>
+                Learn How It Works
               </button>
             </div>
 
-            {/* Key Platform Highlights */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto text-left">
-              <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-                <span className="text-2xl font-extrabold text-blue-600 block">16 Rules</span>
-                <span className="text-xs text-slate-600 font-medium">Deterministic VC Logic Gates</span>
+            {/* Architecture Metrics Row */}
+            <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto text-left">
+              <div className="p-5 bg-white rounded-xl border border-outline-variant/30 micro-shadow">
+                <span className="text-2xl font-extrabold text-secondary block mb-1">16 Rules</span>
+                <span className="text-xs text-on-surface-variant font-medium">Deterministic VC Logic Gates</span>
               </div>
-              <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-                <span className="text-2xl font-extrabold text-blue-600 block">8 Dimensions</span>
-                <span className="text-xs text-slate-600 font-medium">Weighted Evidence Scoring Math</span>
+              <div className="p-5 bg-white rounded-xl border border-outline-variant/30 micro-shadow">
+                <span className="text-2xl font-extrabold text-emerald-accent block mb-1">8 Dimensions</span>
+                <span className="text-xs text-on-surface-variant font-medium">Evidence-Grounded Scoring Math</span>
               </div>
-              <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-                <span className="text-2xl font-extrabold text-blue-600 block">5 Pillars</span>
-                <span className="text-xs text-slate-600 font-medium">Independent AI Cross-Check</span>
+              <div className="p-5 bg-white rounded-xl border border-outline-variant/30 micro-shadow">
+                <span className="text-2xl font-extrabold text-secondary block mb-1">5 Pillars</span>
+                <span className="text-xs text-on-surface-variant font-medium">Independent AI Cross-Check</span>
               </div>
-              <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-                <span className="text-2xl font-extrabold text-emerald-600 block">14 Days</span>
-                <span className="text-xs text-slate-600 font-medium">Concrete Validation Experiment</span>
+              <div className="p-5 bg-white rounded-xl border border-outline-variant/30 micro-shadow">
+                <span className="text-2xl font-extrabold text-emerald-accent block mb-1">14 Days</span>
+                <span className="text-xs text-on-surface-variant font-medium">Concrete Validation Roadmaps</span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 3-Layer Venture Intelligence Pipeline Section */}
-        <section className="py-24 bg-white border-y border-slate-200">
-          <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <span className="text-xs font-bold text-blue-600 uppercase tracking-widest block mb-2">
-                Engineered Diligence Architecture
+        {/* The 3-Stage Deterministic Engine */}
+        <section id="methodology-engine" className="py-24 bg-white border-y border-outline-variant/20">
+          <div className="max-w-[1440px] mx-auto px-8">
+            <div className="text-center mb-16 max-w-2xl mx-auto">
+              <span className="font-mono text-xs text-secondary uppercase tracking-[0.2em] mb-2 block font-semibold">
+                Diligence Architecture
               </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                How VentureLens Evaluates Startups
-              </h2>
-              <p className="text-slate-600 text-base mt-4 leading-relaxed">
-                We combine deterministic mathematical validation with deep artificial intelligence to challenge assumptions, eliminate founder blind spots, and produce institutional-grade intelligence.
+              <h2 className="text-3xl font-bold mb-4 tracking-tight">The 3-Layer Validation Pipeline</h2>
+              <p className="text-on-surface-variant">
+                VentureLens combines deterministic logic validation with deep artificial intelligence to challenge assumptions and eliminate founder blind spots.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Step 1 */}
-              <div className="p-8 bg-[#f8fafc] rounded-2xl border border-slate-200 hover:border-blue-300 transition-all flex flex-col justify-between">
-                <div>
-                  <div className="w-12 h-12 bg-blue-100 text-blue-700 rounded-xl flex items-center justify-center font-bold text-lg mb-6">
-                    01
+            <div className="relative flex flex-col md:flex-row items-center justify-between gap-8 py-12">
+              {/* Stage 1 */}
+              <div className="w-full md:w-1/3 group cursor-default">
+                <div className="p-8 bg-surface rounded-xl border border-outline-variant/30 micro-shadow group-hover:macro-shadow transition-all duration-300 h-full flex flex-col justify-between">
+                  <div>
+                    <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center mb-6">
+                      <span className="material-symbols-outlined text-secondary text-2xl">description</span>
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">1. Pitch Deck & Fact Extraction</h3>
+                    <p className="text-sm text-on-surface-variant leading-relaxed mb-6">
+                      Upload your deck in PDF, PowerPoint (.pptx), or Word (.docx) format or enter structured inputs. The engine parses ideal customer profile, problem urgency, pricing model, and competitive advantages.
+                    </p>
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-3">
-                    Multi-Format Ingestion & Fact Extraction
-                  </h3>
-                  <p className="text-sm text-slate-600 leading-relaxed mb-6">
-                    Upload your pitch deck in PDF, PowerPoint (.pptx), or Word (.docx) format or complete our structured 13-question questionnaire. The platform extracts your ideal customer profile, problem urgency, pricing model, and competitive advantages without label noise.
-                  </p>
-                </div>
-                <div className="pt-4 border-t border-slate-200 text-xs font-semibold text-blue-600 flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-base">check_circle</span>
-                  <span>Instant Pitch Deck Parsing</span>
+                  <div className="font-mono text-xs text-secondary font-semibold flex items-center gap-2 pt-4 border-t border-outline-variant/20">
+                    <span className="material-symbols-outlined text-sm">check_circle</span>
+                    MULTI-FORMAT INGESTION
+                  </div>
                 </div>
               </div>
 
-              {/* Step 2 */}
-              <div className="p-8 bg-blue-600 text-white rounded-2xl shadow-xl flex flex-col justify-between relative overflow-hidden">
+              {/* Arrow 1 */}
+              <div className="hidden md:block flex-1 h-px bg-outline-variant/40 relative">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-on-surface-variant/40 animate-pulse">chevron_right</span>
+                </div>
+              </div>
+
+              {/* Stage 2 */}
+              <div className="w-full md:w-1/3 z-10">
+                <div className="p-8 bg-primary text-white rounded-xl border border-outline-variant/10 macro-shadow scale-105">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-emerald-accent/20 rounded-lg flex items-center justify-center">
+                        <span className="material-symbols-outlined text-emerald-accent text-xl">analytics</span>
+                      </div>
+                      <span className="text-lg font-bold">2. Scoring Equation</span>
+                    </div>
+                    <span className="font-mono text-xs text-emerald-accent bg-emerald-accent/10 px-2 py-1 rounded">
+                      DETERMINISTIC
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 mb-6 leading-relaxed">
+                    Evaluates 16 VC logic checks and computes weighted scoring across 8 dimensions: Problem, Customer, Market, Business Model, Moat, Team Fit, Traction, and Risk.
+                  </p>
+                  <div className="space-y-3 font-mono text-xs">
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs mb-1">
+                        <span>PROBLEM URGENCY</span>
+                        <span className="text-emerald-accent">91%</span>
+                      </div>
+                      <div className="confidence-track">
+                        <div className="bg-emerald-accent h-full w-[91%]"></div>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs mb-1">
+                        <span>EVIDENCE CONFIDENCE</span>
+                        <span className="text-secondary">74%</span>
+                      </div>
+                      <div className="confidence-track">
+                        <div className="bg-secondary h-full w-[74%]"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow 2 */}
+              <div className="hidden md:block flex-1 h-px bg-outline-variant/40 relative">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-on-surface-variant/40 animate-pulse">chevron_right</span>
+                </div>
+              </div>
+
+              {/* Stage 3 */}
+              <div className="w-full md:w-1/3 group cursor-default">
+                <div className="p-8 bg-surface rounded-xl border border-outline-variant/30 micro-shadow group-hover:macro-shadow transition-all duration-300 h-full flex flex-col justify-between">
+                  <div>
+                    <div className="w-12 h-12 bg-emerald-accent/10 rounded-lg flex items-center justify-center mb-6">
+                      <span className="material-symbols-outlined text-emerald-accent text-2xl">verified</span>
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">3. AI Cross-Verification</h3>
+                    <p className="text-sm text-on-surface-variant leading-relaxed mb-6">
+                      An independent AI partner challenges claims across 5 pillars, calculates Explanation Integrity, builds a 3-phase technical MVP scope, and gives a CONTINUE, PIVOT, or STOP decision.
+                    </p>
+                  </div>
+                  <div className="font-mono text-xs text-emerald-accent font-semibold flex items-center gap-1.5 pt-4 border-t border-outline-variant/20">
+                    <span className="material-symbols-outlined text-sm">assignment_turned_in</span>
+                    100% AUDIT-READY REPORT
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Feature Bento Grid */}
+        <section className="py-24 bg-surface">
+          <div className="max-w-[1440px] mx-auto px-8">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+              {/* Feature 1 */}
+              <div className="md:col-span-8 bg-white p-12 rounded-2xl border border-outline-variant/30 micro-shadow relative overflow-hidden">
+                <div className="max-w-xl relative z-10">
+                  <span className="font-mono text-xs text-secondary uppercase tracking-[0.2em] mb-4 block font-semibold">
+                    Core Capability
+                  </span>
+                  <h3 className="text-3xl font-bold mb-6">Evidence-Grounded Mathematical Scoring</h3>
+                  <p className="text-on-surface-variant mb-8 leading-relaxed">
+                    VentureLens does not generate arbitrary numbers. We calculate your venture score through a transparent mathematical formula multiplying raw dimension ratings by verified evidence confidence.
+                  </p>
+                  <div className="flex flex-wrap gap-4">
+                    <div className="bg-surface-container-low px-4 py-2 rounded-lg border border-outline-variant/20 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-emerald-accent text-lg">check</span>
+                      <span className="text-xs font-semibold">8 Weighted Dimensions</span>
+                    </div>
+                    <div className="bg-surface-container-low px-4 py-2 rounded-lg border border-outline-variant/20 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-emerald-accent text-lg">check</span>
+                      <span className="text-xs font-semibold">Evidence Confidence Matrix</span>
+                    </div>
+                    <div className="bg-surface-container-low px-4 py-2 rounded-lg border border-outline-variant/20 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-emerald-accent text-lg">check</span>
+                      <span className="text-xs font-semibold">Zero Magic Numbers</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Feature 2 */}
+              <div className="md:col-span-4 bg-primary text-on-primary p-12 rounded-2xl macro-shadow relative overflow-hidden">
                 <div className="relative z-10">
-                  <div className="w-12 h-12 bg-white/20 text-white rounded-xl flex items-center justify-center font-bold text-lg mb-6">
-                    02
+                  <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center mb-8">
+                    <span className="material-symbols-outlined text-white text-2xl">gavel</span>
                   </div>
-                  <h3 className="text-xl font-bold mb-3">
-                    Deterministic VC Rules & Scoring Equation
-                  </h3>
-                  <p className="text-sm text-blue-100 leading-relaxed mb-6">
-                    Your venture is processed through 16 deterministic venture capital heuristic rules and scored via a transparent 8-dimension weighted formula: Problem (20%), Customer (15%), Market (15%), Business Model (15%), Competition (10%), Team Fit (10%), Traction (10%), and Risk (5%).
+                  <h3 className="text-2xl font-bold mb-4">16 Deterministic VC Logic Rules</h3>
+                  <p className="text-sm text-slate-300 mb-8 leading-relaxed">
+                    Heuristic rule checks test consistency between your pricing, target customer, distribution, and market sizing before writing a single line of code.
                   </p>
-                </div>
-                <div className="pt-4 border-t border-blue-400/50 text-xs font-semibold text-white flex items-center gap-1.5 relative z-10">
-                  <span className="material-symbols-outlined text-base">verified</span>
-                  <span>100% Transparent Mathematical Formula</span>
+                  <ul className="space-y-3 font-mono text-xs">
+                    <li className="flex gap-2.5 text-slate-300">
+                      <span className="text-emerald-accent">[01]</span> Price & Customer Alignment
+                    </li>
+                    <li className="flex gap-2.5 text-slate-300">
+                      <span className="text-emerald-accent">[02]</span> Revenue & Sales Cycle Fit
+                    </li>
+                    <li className="flex gap-2.5 text-slate-300">
+                      <span className="text-emerald-accent">[03]</span> Moat Defensibility Validation
+                    </li>
+                  </ul>
                 </div>
               </div>
 
-              {/* Step 3 */}
-              <div className="p-8 bg-[#f8fafc] rounded-2xl border border-slate-200 hover:border-blue-300 transition-all flex flex-col justify-between">
+              {/* Feature 3 */}
+              <div className="md:col-span-4 bg-white p-10 rounded-2xl border border-outline-variant/30 micro-shadow hover:border-emerald-accent/50 transition-colors">
+                <div className="w-12 h-12 bg-emerald-accent/10 rounded-lg flex items-center justify-center mb-6">
+                  <span className="material-symbols-outlined text-emerald-accent text-2xl">science</span>
+                </div>
+                <h3 className="text-xl font-bold mb-3">14-Day Validation Experiments</h3>
+                <p className="text-sm text-on-surface-variant leading-relaxed">
+                  Get a concrete, low-cost experiment to test buyer willingness-to-pay and customer acquisition thresholds before expending capital.
+                </p>
+              </div>
+
+              {/* Feature 4 */}
+              <div className="md:col-span-8 bg-white p-10 rounded-2xl border border-outline-variant/30 micro-shadow hover:border-secondary/50 transition-colors flex flex-col justify-between">
                 <div>
-                  <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center font-bold text-lg mb-6">
-                    03
+                  <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center mb-6">
+                    <span className="material-symbols-outlined text-secondary text-2xl">rate_review</span>
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-3">
-                    Adversarial AI Cross-Check & Strategic Roadmap
-                  </h3>
-                  <p className="text-sm text-slate-600 leading-relaxed mb-6">
-                    An independent AI reasoning model conducts adversarial stress-testing, generating a 5-pillar agreement breakdown, verified claim integrity ratio, 3-phase technical MVP scope, high-converting copy drafts, and a definitive CONTINUE, PIVOT, or STOP decision verdict.
+                  <h3 className="text-xl font-bold mb-3">5-Pillar Adversarial AI Cross-Check</h3>
+                  <p className="text-sm text-on-surface-variant leading-relaxed">
+                    An independent AI reasoning model challenges your business claims across Problem reality, Customer accessibility, Market sizing, Business model margins, and Execution feasibility.
                   </p>
                 </div>
-                <div className="pt-4 border-t border-slate-200 text-xs font-semibold text-emerald-600 flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-base">assessment</span>
-                  <span>Institutional Diligence Report</span>
+                <div className="mt-6 border-t border-outline-variant/20 pt-4 flex justify-between items-center text-xs">
+                  <span className="text-on-surface-variant font-medium">Strategic Review Engine: OpenRouter AI</span>
+                  <span className="text-emerald-accent font-semibold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-accent"></span>
+                    Active & Verified
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Powerful Features Grid */}
-        <section className="py-24 bg-[#f8fafc]">
-          <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <span className="text-xs font-bold text-blue-600 uppercase tracking-widest block mb-2">
-                Enterprise Capabilities
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                Built for High-Stakes Venture Decisions
-              </h2>
-              <p className="text-slate-600 text-base mt-4 leading-relaxed">
-                Everything founders, venture studios, angel investors, and accelerators need to evaluate startup viability with complete confidence.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {/* Card 1 */}
-              <div className="p-8 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-2xl">functions</span>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">
-                  Transparent Scoring Equation
-                </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  Every score is calculated mathematically by multiplying raw scores by evidence confidence across 8 key dimensions. No hidden magic numbers.
-                </p>
-              </div>
-
-              {/* Card 2 */}
-              <div className="p-8 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-2xl">balance</span>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">
-                  5-Pillar Dimension Cross-Check
-                </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  Independent assessment scores Problem, Customer, Market, Business Model, and Execution Fit separately so you see exactly where risks lie.
-                </p>
-              </div>
-
-              {/* Card 3 */}
-              <div className="p-8 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-2xl">fact_check</span>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">
-                  Claim Verification & Integrity
-                </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  Distinguishes verifiable market evidence from unverified founder assertions and measures formal Explanation Integrity.
-                </p>
-              </div>
-
-              {/* Card 4 */}
-              <div className="p-8 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-2xl">science</span>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">
-                  14-Day Validation Experiments
-                </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  Generates an actionable, cost-effective validation experiment with specific milestone gates before you spend capital building.
-                </p>
-              </div>
-
-              {/* Card 5 */}
-              <div className="p-8 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-2xl">menu_book</span>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">
-                  VC Framework Knowledge Base
-                </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  Matches your startup to battle-tested frameworks from Y Combinator, Sequoia Capital, and Reforge specific to your domain.
-                </p>
-              </div>
-
-              {/* Card 6 */}
-              <div className="p-8 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-2xl">description</span>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">
-                  Multi-Format Pitch Deck Ingestion
-                </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  Upload PDF, PowerPoint (.pptx), or Word (.docx) pitch decks directly. The multi-layer parser extracts text instantly.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Founder & Leadership Section */}
-        <section id="founder" className="py-24 bg-white border-t border-slate-200">
-          <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
-            <div className="max-w-4xl mx-auto bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 sm:p-14 text-white shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
-
+        {/* Dedicated Founder & Leadership Section */}
+        <section id="founder" className="py-24 bg-white border-t border-outline-variant/20">
+          <div className="max-w-[1440px] mx-auto px-8">
+            <div className="max-w-4xl mx-auto bg-primary text-white rounded-2xl p-8 md:p-14 macro-shadow relative overflow-hidden">
               <div className="flex flex-col md:flex-row items-center md:items-start gap-8 relative z-10">
-                <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-4xl sm:text-5xl font-black shadow-lg shrink-0 border-2 border-white/20">
+                <div className="w-28 h-28 md:w-36 md:h-36 rounded-xl bg-secondary text-white text-4xl md:text-5xl font-black flex items-center justify-center shadow-lg shrink-0 border border-white/20">
                   DS
                 </div>
 
                 <div className="space-y-4 text-center md:text-left flex-1">
                   <div>
-                    <div className="inline-block px-3 py-1 bg-blue-500/20 text-blue-300 text-xs font-bold uppercase tracking-wider rounded-full border border-blue-400/30 mb-2">
-                      Startup Leadership
-                    </div>
-                    <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+                    <span className="inline-block px-3 py-1 bg-white/10 text-secondary-container text-xs font-mono font-bold uppercase tracking-wider rounded mb-2">
+                      Founder Spotlight
+                    </span>
+                    <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">
                       Datha Sai Swaroop
                     </h2>
-                    <p className="text-base font-semibold text-blue-400 mt-1">
+                    <p className="text-sm font-semibold text-emerald-accent mt-0.5">
                       Founder · IIT BHU
                     </p>
                   </div>
 
-                  <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-normal">
-                    Building VentureLens to eliminate guesswork in early-stage startup validation. Leveraging engineering rigor from IIT BHU and cutting-edge artificial intelligence, VentureLens delivers institutional-grade due diligence, deterministic scoring equations, and actionable validation roadmaps for founders and investors worldwide.
+                  <p className="text-slate-300 text-sm leading-relaxed font-normal">
+                    Building VentureLens to eliminate cognitive bias and subjective guesswork in early-stage venture validation. Combining engineering rigor from IIT BHU with transparent mathematical scoring equations and multi-stage artificial intelligence, VentureLens gives founders and investors institutional-grade due diligence in seconds.
                   </p>
 
-                  {/* Founder Direct Contact Buttons */}
+                  {/* Founder Direct Reach-Out Buttons */}
                   <div className="pt-4 flex flex-wrap items-center justify-center md:justify-start gap-3">
                     <a
                       href="https://www.linkedin.com/in/datha-sai-swaroop-gudimella-ab4184371"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-colors shadow-sm"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-secondary hover:opacity-90 text-white text-xs font-bold rounded-lg transition-all shadow-sm"
                     >
                       <span className="material-symbols-outlined text-base">link</span>
                       <span>LinkedIn Profile</span>
@@ -366,7 +386,7 @@ export default function LandingPage() {
 
                     <a
                       href="mailto:dathasaiswaroopgudimella@gmail.com"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl border border-white/20 transition-colors"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg border border-white/20 transition-colors"
                     >
                       <span className="material-symbols-outlined text-base">mail</span>
                       <span>dathasaiswaroopgudimella@gmail.com</span>
@@ -374,7 +394,7 @@ export default function LandingPage() {
 
                     <a
                       href="tel:+919121146369"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl border border-white/20 transition-colors"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg border border-white/20 transition-colors"
                     >
                       <span className="material-symbols-outlined text-base">call</span>
                       <span>+91 9121146369</span>
@@ -382,7 +402,7 @@ export default function LandingPage() {
 
                     <button
                       onClick={() => setContactModalOpen(true)}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-colors shadow-sm"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-accent text-on-primary text-xs font-bold rounded-lg transition-all hover:opacity-90 shadow-sm"
                     >
                       <span className="material-symbols-outlined text-base">chat</span>
                       <span>Send Direct Message</span>
@@ -394,147 +414,169 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Final Call to Action */}
-        <section className="py-24 bg-blue-600 text-white text-center">
-          <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-6">
+        {/* Free Beta CTA Section */}
+        <section className="py-24 bg-surface">
+          <div className="max-w-[1440px] mx-auto px-8">
+            <div className="max-w-3xl mx-auto text-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-accent/10 border border-emerald-accent/20 rounded-full mb-8">
+                <span className="w-2 h-2 rounded-full bg-emerald-accent animate-pulse"></span>
+                <span className="font-mono text-xs text-emerald-accent font-semibold uppercase tracking-wider">
+                  Free During Beta
+                </span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 tracking-tight">
+                Free, Unlimited Access During Launch
+              </h2>
+              <p className="text-on-surface-variant text-lg mb-10 leading-relaxed">
+                VentureLens is completely free during our launch phase. Run unlimited venture due diligence analyses, multi-format deck extractions, and scoring equations at no cost.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link
+                  href="/wizard"
+                  className="bg-primary text-on-primary px-10 py-4 rounded-xl text-base font-bold hover:opacity-90 transition-all active:scale-95 shadow-sm inline-flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined">rocket_launch</span>
+                  <span>Start Your Free Analysis</span>
+                </Link>
+                <button
+                  onClick={() => setContactModalOpen(true)}
+                  className="bg-white border border-outline-variant text-on-surface px-8 py-4 rounded-xl text-base font-bold hover:bg-surface-container-low transition-colors"
+                >
+                  Contact Us
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Bottom CTA Banner */}
+        <section className="py-24 bg-primary text-on-primary">
+          <div className="max-w-[1440px] mx-auto px-8 text-center relative overflow-hidden">
+            <h2 className="text-3xl md:text-5xl font-bold mb-8 tracking-tight">
               Ready to Stress-Test Your Startup Idea?
             </h2>
-            <p className="text-blue-100 text-base sm:text-lg max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
-              Run your pitch deck or idea through our institutional venture intelligence engine. Completely free to start with comprehensive reports generated in under 20 seconds.
+            <p className="text-base md:text-lg mb-12 max-w-2xl mx-auto opacity-80 leading-relaxed font-normal">
+              Run your pitch deck or startup thesis through our deterministic validation engine in under 20 seconds.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="/wizard"
-                className="w-full sm:w-auto bg-white text-blue-600 px-9 py-4 rounded-xl text-base font-bold hover:bg-blue-50 transition-all shadow-lg active:scale-95"
-              >
-                Start Free Venture Diligence
-              </Link>
-              <button
-                onClick={() => setContactModalOpen(true)}
-                className="w-full sm:w-auto bg-blue-700 text-white border border-blue-400/40 px-8 py-4 rounded-xl text-base font-bold hover:bg-blue-800 transition-all"
-              >
-                Contact Founder Directly
-              </button>
-            </div>
+            <Link
+              href="/wizard"
+              className="bg-emerald-accent text-on-primary px-10 py-5 rounded-xl text-lg font-bold hover:scale-105 transition-transform macro-shadow inline-block active:scale-95"
+            >
+              Start Free Venture Diligence
+            </Link>
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="bg-slate-950 text-slate-400 py-16 border-t border-slate-800">
-        <div className="max-w-[1440px] mx-auto px-6 lg:px-12 grid grid-cols-1 md:grid-cols-5 gap-10">
+      <footer className="bg-white border-t border-outline-variant/30 py-16">
+        <div className="max-w-[1440px] mx-auto px-8 grid grid-cols-1 md:grid-cols-6 gap-10">
           <div className="md:col-span-2 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
-                VL
-              </div>
-              <span className="font-extrabold text-lg text-white">VentureLens AI</span>
-            </div>
-            <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
-              Institutional decision intelligence and evidence-grounded startup evaluation platform. Founded by Datha Sai Swaroop (IIT BHU).
+            <div className="text-xl font-bold text-on-surface">VentureLens</div>
+            <p className="text-on-surface-variant text-xs max-w-xs leading-relaxed">
+              Institutional decision intelligence and evidence-grounded venture evaluation platform.
             </p>
-            <div className="pt-2 text-xs text-slate-400 space-y-1">
-              <p>Email: <a href="mailto:dathasaiswaroopgudimella@gmail.com" className="text-blue-400 hover:underline">dathasaiswaroopgudimella@gmail.com</a></p>
-              <p>Phone: <a href="tel:+919121146369" className="text-blue-400 hover:underline">+91 9121146369</a></p>
-              <p>LinkedIn: <a href="https://www.linkedin.com/in/datha-sai-swaroop-gudimella-ab4184371" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Datha Sai Swaroop</a></p>
-            </div>
+            <p className="text-xs text-on-surface-variant">
+              Founder: Datha Sai Swaroop (IIT BHU)
+            </p>
           </div>
-
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Product</h4>
-            <ul className="space-y-2.5 text-xs font-medium">
-              <li><Link href="/features" className="hover:text-white transition-colors">Features</Link></li>
-              <li><Link href="/platform" className="hover:text-white transition-colors">Platform</Link></li>
-              <li><Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
-              <li><Link href="/templates" className="hover:text-white transition-colors">Templates</Link></li>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface mb-4">Product</h4>
+            <ul className="space-y-2 text-xs font-medium text-on-surface-variant">
+              <li><Link href="/features" className="hover:text-secondary transition-colors">Features</Link></li>
+              <li><Link href="/platform" className="hover:text-secondary transition-colors">Platform</Link></li>
+              <li><Link href="/pricing" className="hover:text-secondary transition-colors">Pricing</Link></li>
+              <li><Link href="/templates" className="hover:text-secondary transition-colors">Templates</Link></li>
             </ul>
           </div>
-
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Company</h4>
-            <ul className="space-y-2.5 text-xs font-medium">
-              <li><Link href="/about" className="hover:text-white transition-colors">About Founder</Link></li>
-              <li><Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
-              <li><button onClick={() => toast.info("Research papers coming soon.")} className="hover:text-white transition-colors text-left">Methodology</button></li>
-              <li><button onClick={() => toast.info("Accelerator partnerships coming soon.")} className="hover:text-white transition-colors text-left">Partnerships</button></li>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface mb-4">Company</h4>
+            <ul className="space-y-2 text-xs font-medium text-on-surface-variant">
+              <li><Link href="/about" className="hover:text-secondary transition-colors">About</Link></li>
+              <li><Link href="/contact" className="hover:text-secondary transition-colors">Contact</Link></li>
+              <li><button onClick={() => toast.info("Methodology papers coming soon")} className="hover:text-secondary transition-colors text-left">Methodology</button></li>
+              <li><button onClick={() => toast.info("Accelerator partnerships coming soon")} className="hover:text-secondary transition-colors text-left">Partnerships</button></li>
             </ul>
           </div>
-
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Legal</h4>
-            <ul className="space-y-2.5 text-xs font-medium">
-              <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-              <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
-              <li><a href="https://github.com/dathasaiswaroopgudimella-png/Venturelens" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub Repository</a></li>
-              <li><button onClick={() => toast.info("Enterprise SLA available on request.")} className="hover:text-white transition-colors text-left">Enterprise SLA</button></li>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface mb-4">Legal</h4>
+            <ul className="space-y-2 text-xs font-medium text-on-surface-variant">
+              <li><Link href="/privacy" className="hover:text-secondary transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="hover:text-secondary transition-colors">Terms of Service</Link></li>
+              <li><a href="https://github.com/dathasaiswaroopgudimella-png/Venturelens" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors">GitHub</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface mb-4">Connect</h4>
+            <ul className="space-y-2 text-xs font-medium text-on-surface-variant">
+              <li><a href="https://www.linkedin.com/in/datha-sai-swaroop-gudimella-ab4184371" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors">LinkedIn</a></li>
+              <li><a href="mailto:dathasaiswaroopgudimella@gmail.com" className="hover:text-secondary transition-colors">Email</a></li>
+              <li><a href="tel:+919121146369" className="hover:text-secondary transition-colors">+91 9121146369</a></li>
             </ul>
           </div>
         </div>
-
-        <div className="max-w-[1440px] mx-auto px-6 lg:px-12 mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-4">
-          <p>© 2026 VentureLens AI. Founded by Datha Sai Swaroop (IIT BHU). All rights reserved.</p>
-          <p className="font-medium">Enterprise Venture Intelligence</p>
+        <div className="max-w-[1440px] mx-auto px-8 mt-12 pt-8 border-t border-outline-variant/10 flex justify-between items-center text-xs text-on-surface-variant">
+          <p>© 2026 VentureLens AI. All rights reserved.</p>
         </div>
       </footer>
 
-      {/* Interactive Contact Founder Modal */}
+      {/* Interactive Contact Modal */}
       {contactModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white w-full max-w-lg rounded-2xl border border-slate-200 shadow-2xl p-6 sm:p-8 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-lg rounded-2xl border border-outline-variant/30 shadow-2xl p-6 sm:p-8 relative">
             <button
               onClick={() => setContactModalOpen(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 transition-colors"
+              className="absolute top-5 right-5 text-on-surface-variant hover:text-on-surface transition-colors"
             >
               <span className="material-symbols-outlined text-2xl">close</span>
             </button>
 
             <div className="mb-6">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold">
-                  DS
+                <div className="w-10 h-10 rounded-lg bg-primary text-white flex items-center justify-center font-bold">
+                  VL
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">Connect with Founder</h3>
-                  <p className="text-xs text-blue-600 font-semibold">Datha Sai Swaroop · IIT BHU</p>
+                  <h3 className="text-xl font-bold text-on-surface">Get in Touch</h3>
+                  <p className="text-xs text-on-surface-variant">Direct Inquiry & Support</p>
                 </div>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Send a direct inquiry regarding partnership, pilot deployment, accelerator integration, or investment.
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Send a message regarding partnerships, pilot deployment, or venture intelligence evaluation.
               </p>
             </div>
 
             <form onSubmit={handleContactSubmit} className="space-y-4">
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-1">
-                  Your Full Name
+                <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block mb-1">
+                  Your Name
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Sarah Jenkins"
-                  className="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:border-blue-600"
+                  placeholder="Your Full Name"
+                  className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 text-sm focus:outline-none focus:border-primary bg-surface/50"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-1">
-                  Your Email Address
+                <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block mb-1">
+                  Email Address
                 </label>
                 <input
                   type="email"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="name@company.com"
-                  className="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:border-blue-600"
+                  placeholder="name@example.com"
+                  className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 text-sm focus:outline-none focus:border-primary bg-surface/50"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-1">
+                <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block mb-1">
                   Message / Inquiry
                 </label>
                 <textarea
@@ -542,8 +584,8 @@ export default function LandingPage() {
                   rows={4}
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  placeholder="Share details about your startup, partnership proposal, or question..."
-                  className="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:border-blue-600 resize-none"
+                  placeholder="Share details about your venture or inquiry..."
+                  className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 text-sm focus:outline-none focus:border-primary bg-surface/50 resize-none"
                 />
               </div>
 
@@ -551,20 +593,20 @@ export default function LandingPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm transition-all shadow-md active:scale-95 disabled:opacity-50"
+                  className="w-full bg-primary hover:opacity-90 text-on-primary font-bold py-3 rounded-xl text-sm transition-all shadow-md active:scale-95 disabled:opacity-50"
                 >
-                  {isSubmitting ? "Sending Message..." : "Send Message to Datha Sai Swaroop"}
+                  {isSubmitting ? "Sending..." : "Send Message"}
                 </button>
 
-                <div className="flex items-center justify-between text-xs text-slate-500 px-1">
+                <div className="flex items-center justify-between text-xs text-on-surface-variant px-1">
                   <span>Direct: +91 9121146369</span>
                   <a
                     href="https://www.linkedin.com/in/datha-sai-swaroop-gudimella-ab4184371"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 font-semibold hover:underline"
+                    className="text-secondary font-semibold hover:underline"
                   >
-                    View LinkedIn Profile ↗
+                    LinkedIn Profile ↗
                   </a>
                 </div>
               </div>
