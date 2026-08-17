@@ -1,6 +1,15 @@
 import { ExtractedFacts, RuleOutcome, VentureScores, Recommendation } from "@/types";
 
 export class RecommendationEngine {
+  private getShortIcp(rawIcp?: string): string {
+    if (!rawIcp) return "Target Enterprise Buyers";
+    // Clean long descriptions to crisp buyer title
+    const firstPart = rawIcp.split(/,|;|\(|\bwho\b|\bthat\b|\bspecifically\b/i)[0].trim();
+    if (firstPart.length > 5 && firstPart.length < 45) return firstPart;
+    const words = rawIcp.split(/\s+/).slice(0, 4).join(" ");
+    return words.length > 3 ? words : "Target Enterprise Buyers";
+  }
+
   generate(
     facts: ExtractedFacts,
     ruleOutcomes: RuleOutcome[],
@@ -9,9 +18,10 @@ export class RecommendationEngine {
     const recommendations: Recommendation[] = [];
     let recIdCounter = 1;
 
-    const icp = facts.customer.icp || "target customers";
-    const tag0 = facts.market.industryTags[0] || "industry";
-    const comps = facts.competition.competitorList.join(", ") || "existing alternatives";
+    const shortIcp = this.getShortIcp(facts.customer.icp);
+    const tag0 = facts.market.industryTags[0] || "Industry";
+    const comps = facts.competition.competitorList.slice(0, 3).join(", ") || "incumbent solutions";
+    const isHardwareOrDeepTech = facts.market.industryTags.some((t) => /infrastructure|deeptech|cleantech|energy|hardware/i.test(t));
 
     const addRec = (priority: "Critical" | "High" | "Medium" | "Low", title: string, description: string, timeframe: string) => {
       recommendations.push({
@@ -29,29 +39,29 @@ export class RecommendationEngine {
       if (f.id === "RULE_02_TINY_TAM") {
         addRec(
           "Critical",
-          `Pivot or Expand TAM Beyond Current ${tag0} Niche`,
-          `Expand customer target definitions beyond current limits to encompass broader segments within ${facts.market.geography || 'global markets'} to support venture-scale growth.`,
+          `Expand Addressable Beachhead in ${tag0}`,
+          `Broaden target deployment parameters beyond the initial cohort to include enterprise accounts across ${facts.market.geography || 'global regions'} to unlock venture scale.`,
           "Immediate Action"
         );
       } else if (f.id === "RULE_03_CROWDED_WEAK_MOAT") {
         addRec(
           "Critical",
-          `Build Defensible Moat Against ${comps}`,
-          `With established players like ${comps} in the market, formulate a technical advantage, network effect, or data moat to defend profit margins.`,
+          `Establish Quantitative Defensibility vs ${comps}`,
+          `Formulate defensible proprietary data moats, retrofit compatibility, or patented efficiency speedups to prevent margin erosion against ${comps}.`,
           "Immediate Action"
         );
       } else if (f.id === "RULE_08_NO_VALIDATION") {
         addRec(
           "Critical",
-          `Run 15 Direct Customer Interviews with ${icp}`,
-          `Acquire primary demand signals by interviewing target buyers in ${icp} to quantify exact pain severity and price sensitivity.`,
+          `Secure 3 Paid Pilot Letters of Intent with ${shortIcp}`,
+          `Run structured problem discovery meetings with 15 verified ${shortIcp} decision makers to validate willingness-to-pay and baseline payback periods.`,
           "Immediate Action"
         );
       } else if (f.id === "RULE_06_COMPLEXITY_RESOURCES") {
         addRec(
           "Critical",
-          `Recruit Technical Co-founders for ${tag0} Execution`,
-          `The proposed concept involves high execution complexity. Onboard co-founders or key advisors with specific engineering credentials.`,
+          `Onboard Domain Specialist Advisors for ${tag0}`,
+          `Due to engineering and operational complexity, recruit seasoned technical veterans with direct ${tag0} deployment experience.`,
           "Immediate Action"
         );
       }
@@ -63,68 +73,77 @@ export class RecommendationEngine {
       if (w.id === "RULE_01_PRICE_ICP_MISMATCH") {
         addRec(
           "High",
-          `Re-align Pricing Model for ${icp}`,
-          `Adjust enterprise price points to align with purchasing behavior of ${icp}, or shift positioning to higher-budget B2B decision makers.`,
+          `Align Contract Value with Enterprise Procurement for ${shortIcp}`,
+          `Structure pricing into tiered annual contracts or performance-linked savings to match the institutional purchasing cycles of ${shortIcp}.`,
           "Next 30 Days"
         );
       } else if (w.id === "RULE_04_MARKETPLACE_SUPPLY") {
         addRec(
           "High",
-          "Draft Supply-Side Acquisition Incentive Plan",
-          "Design a direct incentives program or API integration strategy to secure supply-side inventory before public launch.",
+          "Formulate Supply-Side Liquidity & Acquisition Engine",
+          "Design programmatic supply incentives to secure critical infrastructure or vendor capacity prior to scaling buyer acquisition.",
           "Next 30 Days"
         );
       } else if (w.id === "RULE_05_SAAS_ONE_TIME") {
         addRec(
           "High",
-          "Transition to Recurring SaaS Subscription Pricing",
-          "Shift from lifetime/one-time pricing to recurring monthly or annual subscription plans to maximize customer LTV.",
+          "Transition to Recurring Software / Service Contracts",
+          "Shift one-time transactional engagements into recurring annual service contracts or usage subscriptions to maximize Lifetime Value (LTV).",
           "Next 30 Days"
         );
       } else if (w.id === "RULE_12_ENTERPRISE_SALES_GAP") {
         addRec(
           "High",
-          `Design B2B Enterprise Sales Motion for ${icp}`,
-          `Build a structured outbound sales pipeline detailing security reviews, pilot trial terms, and executive buy-in steps for ${icp}.`,
+          `Build Account-Based Outbound Pipeline for ${shortIcp}`,
+          `Design a structured enterprise sales motion detailing pilot milestone criteria, security governance, and executive sign-off steps for ${shortIcp}.`,
           "Next 30 Days"
         );
       }
     });
 
-    // Score checks - add recommendations if specific dimension is weak
-    if (scores.competition.score < 65 && !recommendations.some((r) => r.title.includes("Moat"))) {
+    // 3. Score-based recommendations
+    if (scores.competition.score < 65 && !recommendations.some((r) => r.title.includes("Defensibility") || r.title.includes("Audit"))) {
       addRec(
         "High",
-        `Conduct Competitive Feature Audit vs ${comps}`,
-        `Perform detailed feature and pricing breakdowns comparing your product directly against ${comps} to identify whitespace.`,
+        `Conduct Competitive Benchmark Audit vs ${comps}`,
+        `Perform quantitative feature and total-cost-of-ownership (TCO) benchmarks against ${comps} to demonstrate clear economic ROI.`,
         "Next 30 Days"
       );
     }
 
-    if (scores.risk.score < 65) {
+    if (scores.risk.score < 65 && !recommendations.some((r) => r.title.includes("Compliance") || r.title.includes("Regulatory"))) {
       addRec(
         "Medium",
-        `Perform Regulatory & Compliance Audit in ${facts.market.geography}`,
-        `Establish data privacy, legal approval, and compliance protocols tailored to ${tag0} operations.`,
+        `Execute Regulatory & Facility Compliance Review in ${facts.market.geography}`,
+        `Verify health, environmental, data security, and operational safety certifications required for commercial deployment in ${facts.market.geography}.`,
         "Next 90 Days"
       );
     }
 
-    if (scores.scalability.score < 70) {
-      addRec(
-        "Medium",
-        `Automate Self-Serve Onboarding for ${icp}`,
-        `Introduce automated trial signup flows and interactive tutorials to minimize human-assisted onboarding friction.`,
-        "Next 90 Days"
-      );
+    if (scores.scalability.score < 70 && !recommendations.some((r) => r.title.includes("Deployment") || r.title.includes("Onboarding"))) {
+      if (isHardwareOrDeepTech) {
+        addRec(
+          "Medium",
+          `Standardize Pilot Deployment & Retrofit SLA Framework`,
+          `Create standardized installation checklists, performance telemetry, and SLA guarantees to reduce facility onboarding time.`,
+          "Next 90 Days"
+        );
+      } else {
+        addRec(
+          "Medium",
+          `Streamline Customer Onboarding & Pilot Activation for ${shortIcp}`,
+          `Deploy automated trial setup workflows, interactive configuration guides, and onboarding playbooks to minimize sales cycle friction.`,
+          "Next 90 Days"
+        );
+      }
     }
 
-    // 3. Low priority fallback items
+    // 4. Low priority fallback items
     if (recommendations.length < 3) {
       addRec(
         "Low",
-        `Expand ${tag0} Strategic Advisor Network`,
-        `Recruit 1-2 seasoned industry veterans to your advisory board to build trust with ${icp} and open enterprise partnership doors.`,
+        `Recruit Strategic Advisory Board Members in ${tag0}`,
+        `Onboard 1–2 seasoned industry executives to advise on enterprise partnership introductions and buyer credibility with ${shortIcp}.`,
         "Ongoing"
       );
     }
