@@ -64,42 +64,56 @@ export default function WizardPage() {
   ];
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (step === 4) {
-      if (loadingStage < pipelineStages.length) {
-        timer = setTimeout(() => {
-          setLoadingText(pipelineStages[loadingStage]);
-          setLoadingStage((prev) => prev + 1);
-        }, 1200);
-      } else if (!analysisTriggered.current) {
-        analysisTriggered.current = true;
-        setAwaitingServer(true);
-        setLoadingText("Awaiting server response — running AI Decision Engine...");
+    let interval: NodeJS.Timeout;
+    if (step === 4 && !analysisTriggered.current) {
+      analysisTriggered.current = true;
+      setLoadingStage(0);
+      setLoadingText(pipelineStages[0]);
 
-        const triggerAnalysis = async () => {
-          try {
-            console.log("[Wizard] Triggering VentureLens AI analysis...");
-            const report = await startAnalysis(answers);
-            localStorage.setItem("latest_venturelens_report", JSON.stringify(report));
-            router.push(`/report/latest`);
-          } catch (err: any) {
-            console.error("Analysis failed:", err);
-            toast.error("Analysis failed", {
-              description: err?.message || "Please check your API configuration and try again.",
-              duration: 6000,
-            });
-            setStep(3);
-            setLoadingStage(0);
-            setAwaitingServer(false);
-            analysisTriggered.current = false;
+      // Smooth fast progress animation while server is processing
+      interval = setInterval(() => {
+        setLoadingStage((prev) => {
+          const next = prev + 1;
+          if (next < pipelineStages.length) {
+            setLoadingText(pipelineStages[next]);
+            return next;
           }
-        };
-        triggerAnalysis();
-      }
+          return prev;
+        });
+      }, 400);
+
+      const triggerAnalysis = async () => {
+        try {
+          console.log("[Wizard] Triggering fast VentureLens AI analysis...");
+          const report = await startAnalysis(answers);
+          clearInterval(interval);
+          setLoadingStage(pipelineStages.length);
+          setLoadingText("Report Complete! Generating intelligence dashboard...");
+
+          if (typeof window !== "undefined") {
+            localStorage.setItem("latest_venturelens_report", JSON.stringify(report));
+          }
+          router.push("/report/latest");
+        } catch (err: any) {
+          clearInterval(interval);
+          console.error("Analysis failed:", err);
+          toast.error("Analysis failed", {
+            description: err?.message || "Please check your API configuration and try again.",
+            duration: 6000,
+          });
+          setStep(3);
+          setLoadingStage(0);
+          analysisTriggered.current = false;
+        }
+      };
+
+      triggerAnalysis();
     }
-    return () => clearTimeout(timer);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, loadingStage]);
+  }, [step]);
 
   // AI Document Upload & Parse Handler
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
