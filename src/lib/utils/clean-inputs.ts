@@ -29,36 +29,51 @@ export function isNonCommercialSubmission(
   const text = (ideaText || "").toLowerCase().trim();
   if (!text) return true;
 
-  const allText = [
-    ideaText,
+  // Clean conversational prefixes: "my idea is to", "is to", etc.
+  const coreIdea = text
+    .replace(/^(my\s*idea\s*is\s*to\s*|is\s*to\s*|we\s*want\s*to\s*|i\s*want\s*to\s*|to\s*)/i, "")
+    .trim();
+
+  // Combine ONLY user-entered text (exclude default dropdowns like revenueModel = "SaaS")
+  const userEnteredFields = [
+    coreIdea,
     answers?.problemSolved,
     answers?.targetCustomer,
     answers?.pricingStrategy,
     answers?.differentiation,
-    answers?.revenueModel,
+    answers?.teamBackground,
+    answers?.currentValidation,
   ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
 
-  // Personal activities, jokes, gibberish
-  if (
-    /\b(sleep|sleeping|say hello|say hi|doing nothing|watch movie|watching tv|eating food|eat food|play game|playing games|joke|haha|fun only|just for fun|hello world|wake up)\b/i.test(
-      text
-    )
-  ) {
-    const hasCommercialContext =
-      /\b(hardware|patient|hospital|clinical|diagnostic|saas|software|platform|b2b|enterprise|monetiz|revenue|\$\d+|₹\d+|arr|mrr|pilot|contract|infrastructure|cooling|thermal|fintech|biotech|analytics)\b/i.test(
-        allText
+  // 1. Explicit personal activities, jokes, or non-commercial phrases
+  const personalActivityPattern =
+    /\b(sleep|sleeping|say hello|say hi|doing nothing|watch movie|watching tv|eating food|eat food|play game|playing games|joke|haha|fun only|just for fun|hello world|wake up|chilling|hangout|greetings)\b/i;
+
+  if (personalActivityPattern.test(coreIdea)) {
+    // Only permit if there is deep, verified commercial text (e.g. clinical sleep apnea medical device)
+    const hasDetailedCommercialProblem =
+      (answers?.problemSolved?.length || 0) > 40 &&
+      /\b(patient|clinical|hospital|apnea|diagnostic|cost|inefficiency|enterprise|software)\b/i.test(
+        answers?.problemSolved || ""
       );
-    if (!hasCommercialContext) return true;
+    const hasVerifiedTraction =
+      /\b(paying|\$\d+|₹\d+|arr|mrr|active contracts|pilot site)\b/i.test(
+        answers?.currentValidation || ""
+      );
+
+    if (!hasDetailedCommercialProblem && !hasVerifiedTraction) {
+      return true;
+    }
   }
 
-  // Pure single-phrase or random string without business keywords
-  if (text.length < 35) {
+  // 2. Extremely short text with no business keywords
+  if (coreIdea.length < 35) {
     const hasBusinessKeyword =
-      /\b(ai|saas|app|platform|tool|service|product|system|software|b2b|b2c|workflow|analytics|data|api|cloud|health|fintech|infra|marketplace|developer|sales|energy|cooling|hardware|deeptech|logistics|edtech)\b/i.test(
-        text
+      /\b(ai|saas|app|platform|tool|service|product|system|software|b2b|b2c|workflow|analytics|data|api|cloud|health|fintech|infra|marketplace|developer|sales|energy|cooling|hardware|deeptech|logistics|edtech|biotech|medical|automation|compliance|security)\b/i.test(
+        userEnteredFields
       );
     if (!hasBusinessKeyword) return true;
   }
@@ -98,10 +113,9 @@ export function cleanFieldText(text?: string): string {
 export function formatBuyerPersona(rawIcp?: string): string {
   if (!rawIcp) return "prospective enterprise buyers";
   const cleaned = cleanFieldText(rawIcp);
-  if (/^(target customers?|target users?|customers?|users?|anyone|everyone|people)$/i.test(cleaned)) {
+  if (/^(target customers?|target users?|customers?|users?|anyone|everyone|people|all)$/i.test(cleaned.trim())) {
     return "prospective enterprise buyers";
   }
-  // Trim long clauses
   const shortIcp = cleaned.split(/,|;|\(|\bwho\b|\bthat\b|\bspecifically\b/i)[0].trim();
   return shortIcp.length > 3 ? shortIcp : "target decision-makers";
 }
@@ -123,11 +137,21 @@ export function formatGeography(rawGeo?: string): string {
  */
 export function extractStartupName(ideaText: string): string {
   if (!ideaText) return "Venture";
+
+  // Check for explicit "Startup Name: XYZ"
   const nameMatch = ideaText.match(/startup\s*name\s*:\s*([a-zA-Z0-9\s_-]+?)(?:\n|one-line|pitch|problem|\.|\,|$)/i);
   if (nameMatch && nameMatch[1]?.trim()) {
     return nameMatch[1].trim();
   }
-  const firstWords = cleanFieldText(ideaText).split(/\s+/).slice(0, 3).join(" ");
+
+  // Strip leading conversational phrases: "is to", "my idea is to", "we are building"
+  const cleaned = cleanFieldText(ideaText)
+    .replace(/^(my\s*idea\s*is\s*to\s*|is\s*to\s*|we\s*are\s*building\s*|we\s*build\s*|i\s*want\s*to\s*|to\s*)/i, "")
+    .trim();
+
+  if (!cleaned) return "Venture";
+
+  const firstWords = cleaned.split(/\s+/).slice(0, 3).join(" ");
   return firstWords.length > 25 ? firstWords.slice(0, 25) + "..." : firstWords || "Venture";
 }
 
