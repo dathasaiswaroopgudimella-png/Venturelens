@@ -142,11 +142,10 @@ export default function WizardPage() {
       const data = await res.json();
       const extracted: Partial<QuestionnaireAnswers> = data.answers || {};
 
-      // Populate all extracted fields into store
-      Object.entries(extracted).forEach(([key, val]) => {
-        if (val && typeof val === "string") {
-          updateAnswer(key as keyof QuestionnaireAnswers, val);
-        }
+      // Populate all extracted fields into store in a single atomic update
+      setAnswers({
+        ...answers,
+        ...extracted,
       });
 
       toast.success("Pitch Deck Parsed with AI!", {
@@ -349,7 +348,7 @@ export default function WizardPage() {
         type="file"
         ref={fileInputRef}
         onChange={handleFileUpload}
-        accept=".pdf,.docx,.doc,.txt,.md,.json,.csv"
+        accept=".pdf,.pptx,.ppt,.docx,.doc,.txt,.md,.json,.csv"
         className="hidden"
       />
 
@@ -756,7 +755,7 @@ export default function WizardPage() {
                     value={answers.targetCustomer}
                     onChange={(e) => updateAnswer("targetCustomer", e.target.value)}
                     className="w-full p-3 bg-white border border-outline-variant/30 rounded-lg text-sm focus:ring-2 focus:ring-secondary/10 outline-none font-medium"
-                    placeholder="e.g. Small-scale organic farmers & independent metropolitan restaurants"
+                    placeholder="e.g. Mid-market engineering teams, B2B procurement managers, or specialized consumers"
                   />
                 </div>
                 {/* Q2 */}
@@ -769,7 +768,7 @@ export default function WizardPage() {
                     value={answers.problemSolved}
                     onChange={(e) => updateAnswer("problemSolved", e.target.value)}
                     className="w-full p-3 bg-white border border-outline-variant/30 rounded-lg text-sm focus:ring-2 focus:ring-secondary/10 outline-none font-medium"
-                    placeholder="e.g. High supply chain markup fees and produce spoilage in transit"
+                    placeholder="e.g. 40+ hours lost per month on manual reconciliation and fragmented tool switching"
                   />
                 </div>
                 {/* Q3 */}
@@ -782,7 +781,7 @@ export default function WizardPage() {
                     value={answers.existingAlternatives}
                     onChange={(e) => updateAnswer("existingAlternatives", e.target.value)}
                     className="w-full p-3 bg-white border border-outline-variant/30 rounded-lg text-sm focus:ring-2 focus:ring-secondary/10 outline-none font-medium"
-                    placeholder="e.g. Traditional commercial wholesale distributors, manual spreadsheets"
+                    placeholder="e.g. Legacy ERP software, manual spreadsheets, hiring outsourced contractors"
                   />
                 </div>
                 {/* Q4 */}
@@ -795,7 +794,7 @@ export default function WizardPage() {
                     value={answers.geography}
                     onChange={(e) => updateAnswer("geography", e.target.value)}
                     className="w-full p-3 bg-white border border-outline-variant/30 rounded-lg text-sm focus:ring-2 focus:ring-secondary/10 outline-none font-medium"
-                    placeholder="e.g. United States, Northeast Metro areas"
+                    placeholder="e.g. North America, Europe, India, or Global"
                   />
                 </div>
                 {/* Q5 */}
@@ -826,7 +825,7 @@ export default function WizardPage() {
                     value={answers.pricingStrategy}
                     onChange={(e) => updateAnswer("pricingStrategy", e.target.value)}
                     className="w-full p-3 bg-white border border-outline-variant/30 rounded-lg text-sm focus:ring-2 focus:ring-secondary/10 outline-none font-medium"
-                    placeholder="e.g. 10% transactional commission fee per trade route"
+                    placeholder="e.g. $49/mo per seat, tiered monthly subscriptions, or 5% transaction take rate"
                   />
                 </div>
                 {/* Q7 */}
@@ -839,7 +838,7 @@ export default function WizardPage() {
                     value={answers.competitors}
                     onChange={(e) => updateAnswer("competitors", e.target.value)}
                     className="w-full p-3 bg-white border border-outline-variant/30 rounded-lg text-sm focus:ring-2 focus:ring-secondary/10 outline-none font-medium"
-                    placeholder="e.g. GrubMarket, ProducePay, local wholesalers"
+                    placeholder="e.g. Salesforce, HubSpot, or legacy manual alternatives"
                   />
                 </div>
                 {/* Q8 */}
@@ -852,7 +851,7 @@ export default function WizardPage() {
                     value={answers.differentiation}
                     onChange={(e) => updateAnswer("differentiation", e.target.value)}
                     className="w-full p-3 bg-white border border-outline-variant/30 rounded-lg text-sm focus:ring-2 focus:ring-secondary/10 outline-none font-medium"
-                    placeholder="e.g. Predictive demand AI matching tool preventing agricultural supply lag"
+                    placeholder="e.g. Proprietary automated workflow engine delivering 10x faster completion"
                   />
                 </div>
                 {/* Q9 */}
@@ -865,7 +864,7 @@ export default function WizardPage() {
                     value={answers.currentValidation}
                     onChange={(e) => updateAnswer("currentValidation", e.target.value)}
                     className="w-full p-3 bg-white border border-outline-variant/30 rounded-lg text-sm focus:ring-2 focus:ring-secondary/10 outline-none font-medium"
-                    placeholder="e.g. 15 letters of intent signed with local restaurants; 4 pilot farms onboarded"
+                    placeholder="e.g. 5 signed letters of intent, 20 active beta pilot users, or $2k MRR"
                   />
                 </div>
                 {/* Q10 */}
@@ -878,7 +877,7 @@ export default function WizardPage() {
                     value={answers.teamBackground}
                     onChange={(e) => updateAnswer("teamBackground", e.target.value)}
                     className="w-full p-3 bg-white border border-outline-variant/30 rounded-lg text-sm focus:ring-2 focus:ring-secondary/10 outline-none font-medium"
-                    placeholder="e.g. CEO ran a local logistics group for 4 years; CTO holds MS in Supply Chain AI"
+                    placeholder="e.g. 5+ years domain expertise in industry, former engineering lead at scale"
                   />
                 </div>
                 {/* Q11 */}
@@ -891,7 +890,7 @@ export default function WizardPage() {
                     value={answers.distributionChannel}
                     onChange={(e) => updateAnswer("distributionChannel", e.target.value)}
                     className="w-full p-3 bg-white border border-outline-variant/30 rounded-lg text-sm focus:ring-2 focus:ring-secondary/10 outline-none font-medium"
-                    placeholder="e.g. Outbound sales targeting regional restaurants; digital farmer cooperatives partnerships"
+                    placeholder="e.g. Direct outbound sales, product-led inbound virality, or strategic B2B partnerships"
                   />
                 </div>
                 {/* Q12 */}
@@ -904,7 +903,7 @@ export default function WizardPage() {
                     value={answers.tamEstimate}
                     onChange={(e) => updateAnswer("tamEstimate", e.target.value)}
                     className="w-full p-3 bg-white border border-outline-variant/30 rounded-lg text-sm focus:ring-2 focus:ring-secondary/10 outline-none font-medium"
-                    placeholder="e.g. $14B US produce supply sector"
+                    placeholder="e.g. $8B global addressable software market"
                   />
                 </div>
               </div>

@@ -1,10 +1,12 @@
 import { OpenAI } from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const PRIMARY_FAST_MODELS = [
+const HIGH_POWER_MODELS = [
+  "meta-llama/llama-3.3-70b-instruct:free",
   "meta-llama/llama-3.2-3b-instruct:free",
   "google/gemma-2-9b-it:free",
   "qwen/qwen-2.5-7b-instruct:free",
+  "mistralai/mistral-7b-instruct:free",
 ];
 
 export class AIProvider {
@@ -39,52 +41,54 @@ export class AIProvider {
   }
 
   /**
-   * Generates a structured completion with a strict 3.8s bounded timeout.
-   * Priority: Google Gemini Flash (~1.2s) -> Fast OpenRouter (~2.5s) -> Instant Domain Synthesis.
-   * Total execution is guaranteed under 4 seconds to never hit Vercel serverless timeouts.
+   * Generates a high-power venture intelligence completion.
+   * Priority: Google Gemini Flash/Pro -> OpenRouter 70B/Instruct -> NVIDIA NIM 70B.
    */
   async generateCompletion(
     systemPrompt: string,
     userPrompt: string,
     jsonMode = false
   ): Promise<string> {
-    // 1. Google Gemini Flash (Fastest, ~1.2s)
+    // 1. Google Gemini (Fastest & high intelligence)
     if (this.gemini) {
-      try {
-        console.log("[AIProvider] Attempting Google Gemini Flash...");
-        const model = this.gemini.getGenerativeModel({
-          model: "gemini-1.5-flash",
-          generationConfig: jsonMode
-            ? { responseMimeType: "application/json", maxOutputTokens: 1400, temperature: 0.25 }
-            : { maxOutputTokens: 1400, temperature: 0.25 },
-        });
+      const models = ["gemini-1.5-flash", "gemini-2.0-flash-lite", "gemini-1.5-pro"];
+      for (const modelName of models) {
+        try {
+          console.log(`[AIProvider] Attempting Google Gemini (${modelName})...`);
+          const model = this.gemini.getGenerativeModel({
+            model: modelName,
+            generationConfig: jsonMode
+              ? { responseMimeType: "application/json", maxOutputTokens: 2048, temperature: 0.2 }
+              : { maxOutputTokens: 2048, temperature: 0.2 },
+          });
 
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Gemini timeout (>3.8s)")), 3800)
-        );
+          const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(`Gemini ${modelName} timeout`)), 9000)
+          );
 
-        const result = await Promise.race([
-          model.generateContent(`${systemPrompt}\n\nUser Input:\n${userPrompt}`),
-          timeoutPromise,
-        ]);
+          const result = await Promise.race([
+            model.generateContent(`${systemPrompt}\n\nUser Input:\n${userPrompt}`),
+            timeoutPromise,
+          ]);
 
-        const text = result.response.text();
-        if (text && text.trim().length > 15) {
-          console.log("[AIProvider] Google Gemini Flash ✓");
-          return text;
+          const text = result.response.text();
+          if (text && text.trim().length > 20) {
+            console.log(`[AIProvider] Google Gemini (${modelName}) ✓`);
+            return text;
+          }
+        } catch (err: any) {
+          console.warn(`[AIProvider] Gemini (${modelName}) skipped: ${err?.message || err}`);
         }
-      } catch (err: any) {
-        console.warn(`[AIProvider] Gemini skipped: ${err?.message || err}`);
       }
     }
 
-    // 2. OpenRouter Fast Pool (3.8s hard threshold)
+    // 2. OpenRouter High-Power Models (70B & Instruct)
     if (this.openrouterKey) {
-      for (const model of PRIMARY_FAST_MODELS) {
+      for (const model of HIGH_POWER_MODELS) {
         try {
           console.log(`[AIProvider] Attempting OpenRouter (${model})...`);
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 3800);
+          const timeout = setTimeout(() => controller.abort(), 7500);
 
           const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
@@ -101,8 +105,8 @@ export class AIProvider {
                 { role: "user", content: userPrompt },
               ],
               response_format: jsonMode ? { type: "json_object" } : undefined,
-              temperature: 0.25,
-              max_tokens: 1400,
+              temperature: 0.2,
+              max_tokens: 2048,
             }),
             signal: controller.signal,
           });
@@ -111,23 +115,23 @@ export class AIProvider {
           if (res.ok) {
             const data = await res.json();
             const text = data.choices?.[0]?.message?.content || "";
-            if (text && text.trim().length > 15) {
+            if (text && text.trim().length > 20) {
               console.log(`[AIProvider] OpenRouter (${model}) ✓`);
               return text;
             }
           }
         } catch (err: any) {
-          console.warn(`[AIProvider] OpenRouter (${model}) skipped: ${err?.name === "AbortError" ? "timeout >3.8s" : err?.message}`);
+          console.warn(`[AIProvider] OpenRouter (${model}) skipped: ${err?.name === "AbortError" ? "timeout" : err?.message}`);
         }
       }
     }
 
-    // 3. NVIDIA NIM Fallback (3.8s hard threshold)
+    // 3. NVIDIA NIM 70B Nemotron Fallback
     if (this.openai) {
       try {
-        console.log("[AIProvider] Attempting NVIDIA NIM...");
+        console.log("[AIProvider] Attempting NVIDIA NIM 70B Nemotron...");
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("NVIDIA NIM timeout (>3.8s)")), 3800)
+          setTimeout(() => reject(new Error("NVIDIA NIM timeout")), 8000)
         );
 
         const apiCall = this.openai.chat.completions.create({
@@ -137,14 +141,14 @@ export class AIProvider {
             { role: "user", content: userPrompt },
           ],
           response_format: jsonMode ? { type: "json_object" } : undefined,
-          temperature: 0.25,
-          max_tokens: 1400,
+          temperature: 0.2,
+          max_tokens: 2048,
         });
 
         const response = await Promise.race([apiCall, timeoutPromise]);
         const text = response.choices[0]?.message?.content || "";
-        if (text && text.trim().length > 15) {
-          console.log("[AIProvider] NVIDIA NIM ✓");
+        if (text && text.trim().length > 20) {
+          console.log("[AIProvider] NVIDIA NIM 70B ✓");
           return text;
         }
       } catch (err: any) {
@@ -152,6 +156,6 @@ export class AIProvider {
       }
     }
 
-    throw new Error("Activating high-speed domain-tailored synthesis.");
+    throw new Error("Activating high-fidelity dynamic domain-tailored synthesis.");
   }
 }
