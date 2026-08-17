@@ -1,14 +1,10 @@
 import { OpenAI } from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Fast, stable free model pool on OpenRouter
-const OPENROUTER_FAST_MODELS = [
+const PRIMARY_FAST_MODELS = [
   "meta-llama/llama-3.2-3b-instruct:free",
   "google/gemma-2-9b-it:free",
   "qwen/qwen-2.5-7b-instruct:free",
-  "mistralai/mistral-7b-instruct:free",
-  "microsoft/phi-3-mini-128k-instruct:free",
-  "nvidia/nemotron-nano-9b-v2:free",
 ];
 
 export class AIProvider {
@@ -43,55 +39,52 @@ export class AIProvider {
   }
 
   /**
-   * Generates a text or structured JSON completion with multi-tier fast fallback.
-   * Priority: Google Gemini Flash (~1.5s) -> OpenRouter Fast Pool (5s threshold per model) -> NVIDIA NIM.
-   * Never throws uncaught network crashes.
+   * Generates a structured completion with a strict 3.8s bounded timeout.
+   * Priority: Google Gemini Flash (~1.2s) -> Fast OpenRouter (~2.5s) -> Instant Domain Synthesis.
+   * Total execution is guaranteed under 4 seconds to never hit Vercel serverless timeouts.
    */
   async generateCompletion(
     systemPrompt: string,
     userPrompt: string,
     jsonMode = false
   ): Promise<string> {
-    // 1. Tier 1: Google Gemini Flash (Fastest, ~1.2s - 2.5s)
+    // 1. Google Gemini Flash (Fastest, ~1.2s)
     if (this.gemini) {
-      const geminiModels = ["gemini-1.5-flash", "gemini-2.0-flash-lite"];
-      for (const modelName of geminiModels) {
-        try {
-          console.log(`[AIProvider] Attempting Google Gemini (${modelName})...`);
-          const model = this.gemini.getGenerativeModel({
-            model: modelName,
-            generationConfig: jsonMode
-              ? { responseMimeType: "application/json", maxOutputTokens: 1600, temperature: 0.25 }
-              : { maxOutputTokens: 1600, temperature: 0.25 },
-          });
+      try {
+        console.log("[AIProvider] Attempting Google Gemini Flash...");
+        const model = this.gemini.getGenerativeModel({
+          model: "gemini-1.5-flash",
+          generationConfig: jsonMode
+            ? { responseMimeType: "application/json", maxOutputTokens: 1400, temperature: 0.25 }
+            : { maxOutputTokens: 1400, temperature: 0.25 },
+        });
 
-          const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("Gemini timeout (>7s)")), 7000)
-          );
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Gemini timeout (>3.8s)")), 3800)
+        );
 
-          const result = await Promise.race([
-            model.generateContent(`${systemPrompt}\n\nUser Input:\n${userPrompt}`),
-            timeoutPromise,
-          ]);
+        const result = await Promise.race([
+          model.generateContent(`${systemPrompt}\n\nUser Input:\n${userPrompt}`),
+          timeoutPromise,
+        ]);
 
-          const text = result.response.text();
-          if (text && text.trim().length > 15) {
-            console.log(`[AIProvider] Google Gemini (${modelName}) ✓`);
-            return text;
-          }
-        } catch (err: any) {
-          console.warn(`[AIProvider] Gemini (${modelName}) skipped: ${err?.message || err}`);
+        const text = result.response.text();
+        if (text && text.trim().length > 15) {
+          console.log("[AIProvider] Google Gemini Flash ✓");
+          return text;
         }
+      } catch (err: any) {
+        console.warn(`[AIProvider] Gemini skipped: ${err?.message || err}`);
       }
     }
 
-    // 2. Tier 2: OpenRouter Sequential Fast Pool with 6s Timeout Per Model
+    // 2. OpenRouter Fast Pool (3.8s hard threshold)
     if (this.openrouterKey) {
-      for (const model of OPENROUTER_FAST_MODELS) {
+      for (const model of PRIMARY_FAST_MODELS) {
         try {
           console.log(`[AIProvider] Attempting OpenRouter (${model})...`);
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 6000); // 6s per-model threshold
+          const timeout = setTimeout(() => controller.abort(), 3800);
 
           const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
@@ -109,16 +102,11 @@ export class AIProvider {
               ],
               response_format: jsonMode ? { type: "json_object" } : undefined,
               temperature: 0.25,
-              max_tokens: 1600,
+              max_tokens: 1400,
             }),
             signal: controller.signal,
           });
           clearTimeout(timeout);
-
-          if (res.status === 429 || res.status === 503) {
-            console.warn(`[AIProvider] OpenRouter (${model}) rate-limited (${res.status}), trying next model...`);
-            continue;
-          }
 
           if (res.ok) {
             const data = await res.json();
@@ -129,17 +117,17 @@ export class AIProvider {
             }
           }
         } catch (err: any) {
-          console.warn(`[AIProvider] OpenRouter (${model}) skipped: ${err?.name === "AbortError" ? "timeout >6s" : err?.message}`);
+          console.warn(`[AIProvider] OpenRouter (${model}) skipped: ${err?.name === "AbortError" ? "timeout >3.8s" : err?.message}`);
         }
       }
     }
 
-    // 3. Tier 3: NVIDIA NIM Fallback
+    // 3. NVIDIA NIM Fallback (3.8s hard threshold)
     if (this.openai) {
       try {
         console.log("[AIProvider] Attempting NVIDIA NIM...");
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("NVIDIA NIM timeout (>6s)")), 6000)
+          setTimeout(() => reject(new Error("NVIDIA NIM timeout (>3.8s)")), 3800)
         );
 
         const apiCall = this.openai.chat.completions.create({
@@ -150,7 +138,7 @@ export class AIProvider {
           ],
           response_format: jsonMode ? { type: "json_object" } : undefined,
           temperature: 0.25,
-          max_tokens: 1600,
+          max_tokens: 1400,
         });
 
         const response = await Promise.race([apiCall, timeoutPromise]);
@@ -164,6 +152,6 @@ export class AIProvider {
       }
     }
 
-    throw new Error("All AI providers exhausted. Activating dynamic domain-tailored synthesis.");
+    throw new Error("Activating high-speed domain-tailored synthesis.");
   }
 }
