@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { QuestionnaireAnswers, UnifiedVentureReport } from "@/types";
+import { generateClientVentureReport } from "@/lib/engines/client-evaluator";
 
 interface VentureStore {
   answers: QuestionnaireAnswers;
@@ -55,6 +56,8 @@ export const useVentureStore = create<VentureStore>((set, get) => ({
   startAnalysis: async (answers) => {
     set({ isAnalyzing: true });
 
+    let report: UnifiedVentureReport | null = null;
+
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
@@ -62,54 +65,56 @@ export const useVentureStore = create<VentureStore>((set, get) => ({
         body: JSON.stringify(answers),
       });
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || "Failed to execute venture analysis.");
+      if (response.ok) {
+        report = await response.json();
       }
-
-      const report: UnifiedVentureReport = await response.json();
-      set({ currentReport: report, isAnalyzing: false });
-
-      // Save report and project to localStorage so guest users can re-open their projects
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem("latest_venturelens_report", JSON.stringify(report));
-          localStorage.setItem(`venturelens_report_${report.projectId}`, JSON.stringify(report));
-
-          const localProj = {
-            id: report.projectId,
-            name: answers.idea.substring(0, 35) + (answers.idea.length > 35 ? "..." : ""),
-            description: answers.idea,
-            status: "analyzed",
-            created_at: report.createdAt || new Date().toISOString(),
-            reports: [
-              {
-                id: report.projectId,
-                overall_score: report.scores.overallScore,
-                created_at: report.createdAt || new Date().toISOString(),
-              },
-            ],
-          };
-
-          const rawList = localStorage.getItem("venturelens_projects_list");
-          const existingList = rawList ? JSON.parse(rawList) : [];
-          const updatedList = [localProj, ...existingList.filter((p: any) => p.id !== report.projectId)];
-          localStorage.setItem("venturelens_projects_list", JSON.stringify(updatedList));
-
-          // Immediately update state
-          set((state) => ({
-            projects: [localProj, ...state.projects.filter((p) => p.id !== report.projectId)],
-          }));
-        } catch (e) {
-          console.warn("[VentureStore] LocalStorage write error:", e);
-        }
-      }
-
-      return report;
-    } catch (error) {
-      set({ isAnalyzing: false });
-      throw error;
+    } catch (networkErr) {
+      console.warn("[VentureStore] Network API call bypassed, activating instant client engine:", networkErr);
     }
+
+    // If server was unreachable, rate-limited, or timed out, generate full report with client engine
+    if (!report || !report.scores) {
+      report = generateClientVentureReport(answers);
+    }
+
+    set({ currentReport: report, isAnalyzing: false });
+
+    // Save report and project to localStorage so guest users can re-open their projects
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("latest_venturelens_report", JSON.stringify(report));
+        localStorage.setItem(`venturelens_report_${report.projectId}`, JSON.stringify(report));
+
+        const localProj = {
+          id: report.projectId,
+          name: answers.idea.substring(0, 35) + (answers.idea.length > 35 ? "..." : ""),
+          description: answers.idea,
+          status: "analyzed",
+          created_at: report.createdAt || new Date().toISOString(),
+          reports: [
+            {
+              id: report.projectId,
+              overall_score: report.scores.overallScore,
+              created_at: report.createdAt || new Date().toISOString(),
+            },
+          ],
+        };
+
+        const rawList = localStorage.getItem("venturelens_projects_list");
+        const existingList = rawList ? JSON.parse(rawList) : [];
+        const updatedList = [localProj, ...existingList.filter((p: any) => p.id !== report.projectId)];
+        localStorage.setItem("venturelens_projects_list", JSON.stringify(updatedList));
+
+        // Immediately update state
+        set((state) => ({
+          projects: [localProj, ...state.projects.filter((p) => p.id !== report.projectId)],
+        }));
+      } catch (e) {
+        console.warn("[VentureStore] LocalStorage write error:", e);
+      }
+    }
+
+    return report;
   },
 
   fetchProjects: async () => {
