@@ -1,12 +1,10 @@
-import { safeJsonParse } from "@/lib/utils/json-repair";
-
-const OPENROUTER_MODELS = [
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "meta-llama/llama-3.2-3b-instruct:free",
-  "google/gemma-2-9b-it:free",
-  "qwen/qwen-2.5-7b-instruct:free",
-  "mistralai/mistral-7b-instruct:free",
-  "microsoft/phi-3-mini-128k-instruct:free",
+const LIVE_OPENROUTER_MODELS = [
+  "google/gemma-4-26b-a4b-it:free",
+  "nvidia/nemotron-3.5-lightning:free",
+  "nvidia/nemotron-3-nano-30b-a3b:free",
+  "google/gemma-4-31b-it:free",
+  "openai/gpt-oss-20b:free",
+  "openrouter/free",
 ];
 
 export class AIProvider {
@@ -22,7 +20,7 @@ export class AIProvider {
 
   /**
    * Generates a deep AI completion using OpenRouter API key exclusively.
-   * Cycles through top high-power free OpenRouter models until completion succeeds.
+   * Cycles through active verified free OpenRouter models until completion succeeds.
    */
   async generateCompletion(
     systemPrompt: string,
@@ -36,11 +34,11 @@ export class AIProvider {
 
     console.log("[AIProvider] Executing AI generation exclusively via OpenRouter API...");
 
-    for (const model of OPENROUTER_MODELS) {
+    for (const model of LIVE_OPENROUTER_MODELS) {
       try {
-        console.log(`[AIProvider] Calling OpenRouter model: ${model}...`);
+        console.log(`[AIProvider] Calling active OpenRouter model: ${model}...`);
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 12000); // 12s per model
+        const timeout = setTimeout(() => controller.abort(), 18000); // 18s per model
 
         const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
@@ -56,35 +54,36 @@ export class AIProvider {
               { role: "system", content: systemPrompt },
               { role: "user", content: userPrompt },
             ],
-            response_format: jsonMode ? { type: "json_object" } : undefined,
             temperature: 0.2,
-            max_tokens: 2000,
+            max_tokens: 2500,
           }),
           signal: controller.signal,
         });
         clearTimeout(timeout);
 
         if (res.status === 429 || res.status === 503) {
-          console.warn(`[AIProvider] OpenRouter model ${model} busy/rate-limited (${res.status}), trying next...`);
+          console.warn(`[AIProvider] OpenRouter model ${model} busy (${res.status}), trying next...`);
           continue;
         }
 
         if (res.ok) {
           const data = await res.json();
-          const text = data.choices?.[0]?.message?.content || "";
+          let text = data.choices?.[0]?.message?.content || "";
           if (text && text.trim().length > 20) {
-            console.log(`[AIProvider] ✓ Real AI generation succeeded using OpenRouter (${model}) [${text.length} chars]`);
+            // Clean markdown codeblocks if present
+            text = text.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
+            console.log(`[AIProvider] ✓ Real AI intelligence generation succeeded using OpenRouter (${model}) [${text.length} chars]`);
             return text;
           }
         } else {
           const errText = await res.text().catch(() => "");
-          console.warn(`[AIProvider] OpenRouter ${model} error (${res.status}):`, errText);
+          console.warn(`[AIProvider] OpenRouter ${model} error (${res.status}):`, errText.slice(0, 150));
         }
       } catch (err: any) {
         console.warn(`[AIProvider] OpenRouter ${model} call failed:`, err?.message || err);
       }
     }
 
-    throw new Error("All OpenRouter models failed to respond.");
+    throw new Error("All active OpenRouter models failed to respond.");
   }
 }

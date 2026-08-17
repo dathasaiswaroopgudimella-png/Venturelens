@@ -92,8 +92,9 @@ export default function WizardPage() {
 
           if (typeof window !== "undefined") {
             localStorage.setItem("latest_venturelens_report", JSON.stringify(report));
+            localStorage.setItem(`venturelens_report_${report.projectId}`, JSON.stringify(report));
           }
-          router.push("/report/latest");
+          router.push(`/report/${report.projectId}`);
         } catch (err: any) {
           clearInterval(interval);
           console.error("Analysis failed:", err);
